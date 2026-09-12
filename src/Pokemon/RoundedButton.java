@@ -80,21 +80,17 @@ public class RoundedButton extends JButton {
         int w = getWidth();
         int h = getHeight();
 
-        // Sombra suave
         g2.setColor(new Color(0, 0, 0, 70));
         g2.fill(new RoundRectangle2D.Double(2, 4, w - 4, h - 4, radio, radio));
 
-        // Fondo degradado
         GradientPaint gp = new GradientPaint(0, 0, base.brighter(), 0, h, base.darker());
         g2.setPaint(gp);
         g2.fill(new RoundRectangle2D.Double(0, 0, w - 4, h - 4, radio, radio));
 
-        // Borde
         g2.setStroke(new BasicStroke(2.0f));
         g2.setColor(new Color(255, 255, 255, isEnabled() ? 200 : 80));
         g2.draw(new RoundRectangle2D.Double(1, 1, w - 6, h - 6, radio, radio));
 
-        // Texto centrado
         FontMetrics fm = g2.getFontMetrics(getFont());
         int x = (w - 4 - fm.stringWidth(getText())) / 2;
         int y = (h - 4 - fm.getHeight()) / 2 + fm.getAscent();

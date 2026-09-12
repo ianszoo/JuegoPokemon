@@ -85,7 +85,6 @@ public class PantallaRegistro extends JPanel {
                 Usuario nuevoUser = new Usuario(user, pass);
                 mainApp.getBaseDatosUsuarios().registrarUsuario(nuevoUser);
 
-                // Auto Login
                 lblError.setText(" ");
                 txtUsuario.setText("");
                 campoPass.limpiar();

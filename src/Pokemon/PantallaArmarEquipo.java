@@ -41,7 +41,6 @@ public class PantallaArmarEquipo extends JPanel {
 
         fondo.add(panelHeader, BorderLayout.NORTH);
 
-        // ---- Centro: selección de Pokémon + slots del equipo ----
         JPanel panelCentro = new JPanel(new BorderLayout(15, 15));
         panelCentro.setOpaque(false);
 

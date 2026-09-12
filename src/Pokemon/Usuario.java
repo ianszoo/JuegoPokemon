@@ -12,8 +12,8 @@ package Pokemon;
 public class Usuario {
     private String username;
     private String password;
-    private ListaEnlazadaPokemon equipo;       // Lista enlazada de Pokémon
-    private ListaEnlazadaObjetos inventario;   // Lista enlazada de Objetos
+    private ListaEnlazadaPokemon equipo;       
+    private ListaEnlazadaObjetos inventario;   
 
     public Usuario(String username, String password) {
         this.username = username;
@@ -29,7 +29,6 @@ public class Usuario {
         inventario.agregar(new Objeto("Revivir", "Revive con 50% HP", 1, 0, true));
     }
 
-    // Getters y Setters
     public String getUsername() {
         return username; 
     }

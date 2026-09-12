@@ -25,15 +25,12 @@ public class TarjetaRedondeada extends JPanel {
         int w = getWidth();
         int h = getHeight();
 
-        // Sombra
         g2.setColor(new Color(0, 0, 0, 90));
         g2.fill(new RoundRectangle2D.Double(6, 8, w - 12, h - 12, radio, radio));
 
-        // Cuerpo
         g2.setColor(colorFondo);
         g2.fill(new RoundRectangle2D.Double(0, 0, w - 12, h - 14, radio, radio));
 
-        // Borde
         g2.setStroke(new BasicStroke(3.5f));
         g2.setColor(colorBorde);
         g2.draw(new RoundRectangle2D.Double(1.75, 1.75, w - 15.5, h - 17.5, radio, radio));

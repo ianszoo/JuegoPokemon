@@ -188,7 +188,6 @@ public class ListaEnlazadaPokemon {
         add(pokemon);
     }
 
-    // Convierte la lista enlazada a arreglo para la GUI (sin exponer nodos)
     public Pokemon[] toArray() {
         int total = contarTotal();
         Pokemon[] arr = new Pokemon[total];
@@ -198,7 +197,6 @@ public class ListaEnlazadaPokemon {
         return arr;
     }
 
-    // Cambia el Pokémon activo por nombre
     public boolean cambiarActivoPorNombre(String nombre) {
         int total = contarTotal();
         for (int i = 0; i < total; i++) {

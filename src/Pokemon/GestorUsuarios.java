@@ -12,8 +12,8 @@ package Pokemon;
 import java.util.Random;
 
 public class GestorUsuarios {
-    private NodoUsuario cabeza;           // Cabeza de la lista enlazada de usuarios
-    private Usuario[] usuariosRivales;    // Catálogo de los 10 rivales predefinidos
+    private NodoUsuario cabeza;           
+    private Usuario[] usuariosRivales;    
     private Random random;
 
     public GestorUsuarios() {

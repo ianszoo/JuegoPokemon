@@ -52,7 +52,6 @@ public class ListaEnlazadaUsuarios {
         return null;
     }
 
-    // 10 Rivales Predefinidos con 4 Pokémon cada uno
     private void inicializar10Rivales() {
         usuariosRivales = new Usuario[10];
         String[] nombres = {

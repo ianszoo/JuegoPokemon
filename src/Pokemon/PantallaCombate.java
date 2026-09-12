@@ -14,11 +14,9 @@ public class PantallaCombate extends JPanel {
     private final CardLayout cardInterno;
     private final JPanel contenedorInterno;
 
-    // Componentes de búsqueda
     private JLabel lblBuscando;
     private Timer timerBuscando;
 
-    // Elementos visuales del campo de batalla
     private FondoImagen panelFondoCampo;
     private JButton btnHuir;
     private JLabel lblSpriteJugador;
@@ -35,7 +33,6 @@ public class PantallaCombate extends JPanel {
     private JLabel lblHpTextoRival;
     private JTextArea txtHistorialBatalla;
 
-    // Botones de acción
     private JButton btnAtacar;
     private JButton btnCambiar;
     private JButton btnObjetos;
@@ -114,7 +111,6 @@ public class PantallaCombate extends JPanel {
         });
         panelFondoCampo.add(btnHuir);
 
-        // Panel Rival
         lblSpriteRival = new JLabel();
         panelFondoCampo.add(lblSpriteRival);
 
@@ -126,7 +122,6 @@ public class PantallaCombate extends JPanel {
         configurarPanelInfo(panelInfoRival, lblNombreRival, lblTipoRival, lblHpTextoRival, barraHpRival);
         panelFondoCampo.add(panelInfoRival);
 
-        // Panel Jugador
         lblSpriteJugador = new JLabel();
         panelFondoCampo.add(lblSpriteJugador);
 
@@ -138,7 +133,6 @@ public class PantallaCombate extends JPanel {
         configurarPanelInfo(panelInfoJugador, lblNombreJugador, lblTipoJugador, lblHpTextoJugador, barraHpJugador);
         panelFondoCampo.add(panelInfoJugador);
 
-        // Listener para reposicionar dinámicamente cuando cambie el tamaño de la ventana
         panelFondoCampo.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
@@ -148,7 +142,6 @@ public class PantallaCombate extends JPanel {
 
         contenedor.add(panelFondoCampo, BorderLayout.CENTER);
 
-        // Historial y Menú inferior
         JPanel panelInferior = new JPanel(new BorderLayout());
         panelInferior.setBackground(new Color(12, 15, 24));
 
@@ -168,38 +161,31 @@ public class PantallaCombate extends JPanel {
         return contenedor;
     }
 
-    /**
-     * Calcula las posiciones exactas de forma responsiva en base al tamaño de la pantalla
-     */
+
     private void recolocarComponentesResponsivo() {
         int w = panelFondoCampo.getWidth();
         int h = panelFondoCampo.getHeight();
 
         if (w <= 0 || h <= 0) return;
 
-        // 1. Botón Huir
         btnHuir.setBounds(25, 20, 110, 36);
 
-        // 2. Info Rival (Arriba a la izquierda)
         int infoW = 340;
         int infoH = 95;
         int infoRivalX = (int) (w * 0.04);
         int infoRivalY = (int) (h * 0.10);
         panelInfoRival.setBounds(infoRivalX, infoRivalY, infoW, infoH);
 
-        // 3. Sprite Rival (Arriba a la derecha, en su plataforma de hierba)
         int spriteRivalSize = Math.max(220, (int) (h * 0.42));
         int spriteRivalX = (int) (w * 0.66) - (spriteRivalSize / 2);
         int spriteRivalY = (int) (h * 0.28) - (spriteRivalSize / 2);
         lblSpriteRival.setBounds(spriteRivalX, spriteRivalY, spriteRivalSize, spriteRivalSize);
 
-        // 4. Sprite Jugador (Abajo a la izquierda, de espaldas en el frente)
         int spriteJugadorSize = Math.max(260, (int) (h * 0.52));
         int spriteJugadorX = (int) (w * 0.22) - (spriteJugadorSize / 2);
         int spriteJugadorY = h - spriteJugadorSize - (int) (h * 0.05);
         lblSpriteJugador.setBounds(spriteJugadorX, spriteJugadorY, spriteJugadorSize, spriteJugadorSize);
 
-        // 5. Info Jugador (Abajo a la derecha)
         int infoJugadorX = (int) (w * 0.62);
         int infoJugadorY = h - infoH - (int) (h * 0.14);
         panelInfoJugador.setBounds(infoJugadorX, infoJugadorY, infoW, infoH);

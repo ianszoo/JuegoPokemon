@@ -37,7 +37,6 @@ public class Combate {
 
         historial.agregar("--- Turno " + turno + " ---");
 
-        // 1. Ataque del Jugador
         int danioJugador = calcularDanio(pJugador, pRival);
         pRival.recibirDanio(danioJugador);
 
@@ -45,7 +44,6 @@ public class Combate {
         historial.agregar(pRival.getNombre() + " rival recibió " + danioJugador + " puntos de daño.");
         historial.agregar(pRival.getNombre() + " rival: " + pRival.getHpActual() + "/" + pRival.getHpMax() + " HP");
 
-        // 2. Comprobar si el rival fue derrotado
         if (pRival.estaDerrotado()) {
             historial.agregar("¡" + pRival.getNombre() + " rival fue derrotado!");
             if (!rival.getEquipo().tieneVivos()) {
@@ -58,7 +56,6 @@ public class Combate {
                 historial.agregar(rival.getUsername() + " envió a " + sig.getNombre() + ".");
             }
         } else {
-            // 3. Contraataque automático del rival
             contraataqueRival();
         }
 
@@ -143,9 +140,19 @@ public class Combate {
         this.historial.agregar("¡Nueva batalla iniciada contra " + rival.getUsername() + "!");
     }
 
-    public Usuario getJugador() { return jugador; }
-    public Usuario getRival() { return rival; }
-    public ListaHistorial getHistorial() { return historial; }
-    public boolean isFinalizado() { return finalizado; }
-    public Usuario getGanador() { return ganador; }
+    public Usuario getJugador() {
+        return jugador; 
+    }
+    public Usuario getRival() {
+        return rival; 
+    }
+    public ListaHistorial getHistorial() {
+        return historial; 
+    }
+    public boolean isFinalizado() {
+        return finalizado; 
+    }
+    public Usuario getGanador() {
+        return ganador; 
+    }
 }

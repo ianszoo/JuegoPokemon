@@ -29,7 +29,6 @@ public class Pokemon {
         this.nivel = nivel;
         this.tipoPrimario = tipo1;
         this.tipoSecundario = tipo2;
-        // Cálculo de vida escalada con nivel
         this.hpMax = (int) Math.floor((2 * psBase * nivel) / 100.0) + nivel + 10;
         this.hpActual = this.hpMax;
         this.ataqueBase = atk;
@@ -41,7 +40,6 @@ public class Pokemon {
         this.rutaImagen = rutaImagen;
     }
 
-    // Constructor de copia
     public Pokemon(Pokemon p) {
         this.nombre = p.nombre;
         this.nivel = p.nivel;
@@ -79,22 +77,51 @@ public class Pokemon {
         }
     }
 
-    // Getters y Setters
-    public String getNombre() { return nombre; }
-    public int getNivel() { return nivel; }
-    public void setNivel(int nivel) { this.nivel = nivel; }
-    public Tipo getTipoPrimario() { return tipoPrimario; }
-    public Tipo getTipoSecundario() { return tipoSecundario; }
-    public int getHpMax() { return hpMax; }
-    public int getHpActual() { return hpActual; }
-    public int getAtaqueBase() { return ataqueBase; }
-    public int getDefensaBase() { return defensaBase; }
-    public String getNombreAtaque() { return nombreAtaque; }
-    public Tipo getTipoAtaque() { return tipoAtaque; }
-    public int getPotenciaAtaque() { return potenciaAtaque; }
-    public boolean isActivo() { return activo; }
-    public void setActivo(boolean activo) { this.activo = activo; }
-    public String getRutaImagen() { return rutaImagen; }
+    public String getNombre() {
+        return nombre; 
+    }
+    public int getNivel() {
+        return nivel; 
+    }
+    public void setNivel(int nivel) {
+        this.nivel = nivel; 
+    }
+    public Tipo getTipoPrimario() {
+        return tipoPrimario; 
+    }
+    public Tipo getTipoSecundario() {
+        return tipoSecundario; 
+    }
+    public int getHpMax() {
+        return hpMax; 
+    }
+    public int getHpActual() {
+        return hpActual; 
+    }
+    public int getAtaqueBase() {
+        return ataqueBase; 
+    }
+    public int getDefensaBase() {
+        return defensaBase; 
+    }
+    public String getNombreAtaque() {
+        return nombreAtaque; 
+    }
+    public Tipo getTipoAtaque() {
+        return tipoAtaque; 
+    }
+    public int getPotenciaAtaque() {
+        return potenciaAtaque; 
+    }
+    public boolean isActivo() {
+        return activo; 
+    }
+    public void setActivo(boolean activo) {
+        this.activo = activo; 
+    }
+    public String getRutaImagen() {
+        return rutaImagen; 
+    }
 
     public String getTiposString() {
         if (tipoSecundario == null || tipoSecundario == Tipo.NINGUNO) {
