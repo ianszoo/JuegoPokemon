@@ -68,5 +68,16 @@ public class ListaEnlazadaObjetos {
         }
         return null;
     }
+    public void agregar(Objeto obj) {
+        insertar(obj);
+    }
 
+    public Objeto[] toArray() {
+        int total = contar();
+        Objeto[] arr = new Objeto[total];
+        for (int i = 0; i < total; i++) {
+            arr[i] = obtenerPorIndice(i);
+        }
+        return arr;
+    }
 }

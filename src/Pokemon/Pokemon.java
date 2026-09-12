@@ -12,119 +12,105 @@ package Pokemon;
 public class Pokemon {
     private String nombre;
     private int nivel;
-    private Tipo tipo;
+    private Tipo tipoPrimario;
+    private Tipo tipoSecundario;
     private int hpMax;
     private int hpActual;
-    private int ataque;
-    private String nombre_atk;
+    private int ataqueBase;
+    private int defensaBase;
+    private String nombreAtaque;
+    private Tipo tipoAtaque;
+    private int potenciaAtaque;
+    private boolean activo;
+    private String rutaImagen;
 
-    public Pokemon(String nombre, int nivel, Tipo tipo, int hpMax, int ataque, String nombre_atk) {
+    public Pokemon(String nombre, int nivel, Tipo tipo1, Tipo tipo2, int psBase, int atk, int def, String nombreAtaque, Tipo tipoAtaque, int potAtaque, String rutaImagen) {
         this.nombre = nombre;
         this.nivel = nivel;
-        this.tipo = tipo;
-        this.hpMax = hpMax;
-        this.hpActual=hpMax;
-        this.ataque = ataque;
-        this.nombre_atk = nombre_atk;
+        this.tipoPrimario = tipo1;
+        this.tipoSecundario = tipo2;
+        // Cálculo de vida escalada con nivel
+        this.hpMax = (int) Math.floor((2 * psBase * nivel) / 100.0) + nivel + 10;
+        this.hpActual = this.hpMax;
+        this.ataqueBase = atk;
+        this.defensaBase = def;
+        this.nombreAtaque = nombreAtaque;
+        this.tipoAtaque = tipoAtaque;
+        this.potenciaAtaque = potAtaque;
+        this.activo = false;
+        this.rutaImagen = rutaImagen;
     }
-    
-    public Pokemon(String nombre, int nivel, Tipo tipo, int hpMax, int hpActual, int ataque, String nombreAtaque) {
-        this.nombre = nombre;
-        this.nivel = nivel;
-        this.tipo = tipo;
-        this.hpMax = hpMax;
-        this.hpActual=Math.min(hpMax,Math.max(0,hpActual));
-        this.ataque = ataque;
-        this.nombre_atk = nombreAtaque;
+
+    // Constructor de copia
+    public Pokemon(Pokemon p) {
+        this.nombre = p.nombre;
+        this.nivel = p.nivel;
+        this.tipoPrimario = p.tipoPrimario;
+        this.tipoSecundario = p.tipoSecundario;
+        this.hpMax = p.hpMax;
+        this.hpActual = p.hpMax;
+        this.ataqueBase = p.ataqueBase;
+        this.defensaBase = p.defensaBase;
+        this.nombreAtaque = p.nombreAtaque;
+        this.tipoAtaque = p.tipoAtaque;
+        this.potenciaAtaque = p.potenciaAtaque;
+        this.activo = false;
+        this.rutaImagen = p.rutaImagen;
     }
-    
-    public boolean estaDerrotado(){
-        return this.hpActual<=0;
+
+    public boolean estaDerrotado() {
+        return hpActual <= 0;
     }
-    
-    public void recibirDanio(int danio){
-        if (danio <= 0){
-            return;
+
+    public void recibirDanio(int danio) {
+        this.hpActual -= danio;
+        if (this.hpActual < 0) this.hpActual = 0;
+    }
+
+    public void curar(int cantidad) {
+        this.hpActual += cantidad;
+        if (this.hpActual > this.hpMax) this.hpActual = this.hpMax;
+    }
+
+    public void revivir(int porcentaje) {
+        if (estaDerrotado()) {
+            this.hpActual = (int) (this.hpMax * (porcentaje / 100.0));
+            if (this.hpActual <= 0) this.hpActual = 1;
         }
-        this.hpActual=Math.max(0,this.hpActual-danio);
     }
-    
-    public void curar(int cantidad){
-        if (estaDerrotado() || cantidad<=0){
-            return;
+
+    // Getters y Setters
+    public String getNombre() { return nombre; }
+    public int getNivel() { return nivel; }
+    public void setNivel(int nivel) { this.nivel = nivel; }
+    public Tipo getTipoPrimario() { return tipoPrimario; }
+    public Tipo getTipoSecundario() { return tipoSecundario; }
+    public int getHpMax() { return hpMax; }
+    public int getHpActual() { return hpActual; }
+    public int getAtaqueBase() { return ataqueBase; }
+    public int getDefensaBase() { return defensaBase; }
+    public String getNombreAtaque() { return nombreAtaque; }
+    public Tipo getTipoAtaque() { return tipoAtaque; }
+    public int getPotenciaAtaque() { return potenciaAtaque; }
+    public boolean isActivo() { return activo; }
+    public void setActivo(boolean activo) { this.activo = activo; }
+    public String getRutaImagen() { return rutaImagen; }
+
+    public String getTiposString() {
+        if (tipoSecundario == null || tipoSecundario == Tipo.NINGUNO) {
+            return tipoPrimario.toString();
         }
-        this.hpActual=Math.min(this.hpMax,this.hpActual+cantidad);
+        return tipoPrimario.toString() + " / " + tipoSecundario.toString();
     }
-    
-    public boolean revivir(int percentHp) {
-        if (!estaDerrotado()){
-            return false;
-        }
-        this.hpActual=(this.hpMax*Math.max(1, Math.min(100,percentHp))) / 100;
-        return true;
-    }
-    
-    public Pokemon clonar(){
-        return new Pokemon(this.nombre,this.nivel,this.tipo,this.hpMax,this.hpActual,this.ataque,this.nombre_atk);
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-
-    public int getNivel() {
-        return nivel;
-    }
-
-    public void setNivel(int nivel) {
-        this.nivel = nivel;
-    }
-
-    public Tipo getTipo() {
-        return tipo;
-    }
-
-    public void setTipo(Tipo tipo) {
-        this.tipo = tipo;
-    }
-
-    public int getHpMax() {
-        return hpMax;
+    public void setHpActual(int hpActual) {
+        this.hpActual = Math.max(0, Math.min(hpActual, this.hpMax));
     }
 
     public void setHpMax(int hpMax) {
         this.hpMax = hpMax;
     }
 
-    public int getHpActual() {
-        return hpActual;
-    }
-
-    public void setHpActual(int hpActual) {
-        this.hpActual = hpActual;
-    }
-
-    public int getAtaque() {
-        return ataque;
-    }
-
     public void setAtaque(int ataque) {
-        this.ataque = ataque;
-    }
-
-    public String getNombre_atk() {
-        return nombre_atk;
-    }
-
-    public void setNombre_atk(String nombre_atk) {
-        this.nombre_atk = nombre_atk;
-    }
-    
-    public String toString(){
-        return nombre+" (Nv."+nivel+" | Tipo: "+tipo+" | HP: "+hpActual+"/"+hpMax+")";
+        this.ataqueBase = ataque;
     }
 }

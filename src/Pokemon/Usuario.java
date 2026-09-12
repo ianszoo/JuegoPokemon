@@ -12,14 +12,14 @@ package Pokemon;
 public class Usuario {
     private String username;
     private String password;
-    private Pokemon equipo;       
-    private Objeto inventario;  
+    private ListaEnlazadaPokemon equipo;       // Lista enlazada de Pokémon
+    private ListaEnlazadaObjetos inventario;   // Lista enlazada de Objetos
 
     public Usuario(String username, String password) {
         this.username = username;
         this.password = password;
-        this.equipo = new Pokemon();
-        this.inventario = new Objeto();
+        this.equipo = new ListaEnlazadaPokemon();
+        this.inventario = new ListaEnlazadaObjetos();
         inicializarInventario();
     }
 
@@ -30,12 +30,24 @@ public class Usuario {
     }
 
     // Getters y Setters
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
+    public String getUsername() {
+        return username; 
+    }
+    public void setUsername(String username) {
+        this.username = username; 
+    }
 
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
+    public String getPassword() { 
+        return password; 
+    }
+    public void setPassword(String password) { 
+        this.password = password; 
+    }
 
-    public ListaPokemon getEquipo() { return equipo; }
-    public ListaObjetos getInventario() { return inventario; }
+    public ListaEnlazadaPokemon getEquipo() { 
+        return equipo; 
+    }
+    public ListaEnlazadaObjetos getInventario() { 
+        return inventario; 
+    }
 }

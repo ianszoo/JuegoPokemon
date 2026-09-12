@@ -184,5 +184,34 @@ public class ListaEnlazadaPokemon {
     public boolean estaVacia(){
         return head==null;
     }
-    
+    public void insertar(Pokemon pokemon) {
+        add(pokemon);
+    }
+
+    // Convierte la lista enlazada a arreglo para la GUI (sin exponer nodos)
+    public Pokemon[] toArray() {
+        int total = contarTotal();
+        Pokemon[] arr = new Pokemon[total];
+        for (int i = 0; i < total; i++) {
+            arr[i] = obtenerConIndice(i);
+        }
+        return arr;
+    }
+
+    // Cambia el Pokémon activo por nombre
+    public boolean cambiarActivoPorNombre(String nombre) {
+        int total = contarTotal();
+        for (int i = 0; i < total; i++) {
+            Pokemon p = obtenerConIndice(i);
+            if (p != null && p.getNombre().equalsIgnoreCase(nombre) && !p.estaDerrotado()) {
+                this.indice = i;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean tieneVivos() {
+        return contarDisponibles() > 0;
+    }
 }
