@@ -6,7 +6,10 @@ import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.function.Consumer;
 
 public class PantallaCombate extends JPanel {
 
@@ -14,11 +17,16 @@ public class PantallaCombate extends JPanel {
     private final CardLayout cardInterno;
     private final JPanel contenedorInterno;
 
-    // Componentes de búsqueda
     private JLabel lblBuscando;
     private Timer timerBuscando;
 
-    // Elementos visuales del campo de batalla
+    // Nombres de ENTRENADORES para la animación de búsqueda (no Pokémon)
+    private static final String[] NOMBRES_ENTRENADORES = {
+        "Red", "Blue", "Cynthia", "Steven", "Lance",
+        "Leon", "Ash", "Iris", "Alder", "Diantha"
+    };
+
+    private JLayeredPane campoLayered;
     private FondoImagen panelFondoCampo;
     private JButton btnHuir;
     private JLabel lblSpriteJugador;
@@ -35,7 +43,11 @@ public class PantallaCombate extends JPanel {
     private JLabel lblHpTextoRival;
     private JTextArea txtHistorialBatalla;
 
-    // Botones de acción
+    // --- Overlay embebido (reemplaza los JOptionPane) ---
+    private JPanel overlay;
+    private JLabel lblOverlayTitulo;
+    private JPanel panelOverlayContenido;
+
     private JButton btnAtacar;
     private JButton btnCambiar;
     private JButton btnObjetos;
@@ -45,6 +57,11 @@ public class PantallaCombate extends JPanel {
     private Usuario rivalActual;
     private ListaHistorial historial;
     private Combate combateActual;
+
+    // Cola de mensajes para animar los turnos
+    private final List<String> colaMensajes = new ArrayList<>();
+    private Timer timerMensajes;
+    private Runnable alTerminarAnimacion;
 
     public PantallaCombate(PokemonShenanigans mainApp) {
         this.mainApp = mainApp;
@@ -57,6 +74,10 @@ public class PantallaCombate extends JPanel {
         contenedorInterno.add(crearPanelBuscando(), "Buscando");
         contenedorInterno.add(crearPanelBatalla(), "Batalla");
     }
+
+    // ============================================================
+    //  PANTALLA DE BÚSQUEDA
+    // ============================================================
 
     private JPanel crearPanelBuscando() {
         FondoDegradado fondo = new FondoDegradado(UIUtils.AZUL_OSCURO, new Color(12, 15, 24));
@@ -76,14 +97,14 @@ public class PantallaCombate extends JPanel {
         }
 
         Random rnd = new Random();
-        String[] nombres = PokemonFactory.NOMBRES_DISPONIBLES;
         int[] tick = {0};
 
-        timerBuscando = new Timer(100, e -> {
+        timerBuscando = new Timer(180, e -> {
             tick[0]++;
-            lblBuscando.setText("Buscando rival: " + nombres[rnd.nextInt(nombres.length)] + " ...");
+            String nombreFalso = NOMBRES_ENTRENADORES[rnd.nextInt(NOMBRES_ENTRENADORES.length)];
+            lblBuscando.setText("Buscando entrenador: " + nombreFalso + " ...");
 
-            if (tick[0] >= 10) {
+            if (tick[0] >= 8) {
                 timerBuscando.stop();
                 lblBuscando.setText("¡Rival encontrado: " + rivalActual.getUsername() + "!");
 
@@ -99,24 +120,27 @@ public class PantallaCombate extends JPanel {
         timerBuscando.start();
     }
 
-    private JPanel crearPanelBatalla() {
-        JPanel contenedor = new JPanel(new BorderLayout(8, 8));
-        contenedor.setBackground(new Color(12, 15, 24));
+    // ============================================================
+    //  PANTALLA DE BATALLA
+    // ============================================================
 
-        // 1. CENTRO: Campo de batalla con los sprites y las barras de HP
+    private JPanel crearPanelBatalla() {
+        JPanel contenedor = new JPanel(new BorderLayout());
+
         panelFondoCampo = new FondoImagen("/imagenes/background.png");
         panelFondoCampo.setLayout(null);
 
         btnHuir = UIUtils.crearBotonSecundario("Huir");
-        btnHuir.addActionListener(e -> {
-            int resp = JOptionPane.showConfirmDialog(this, "¿Deseas huir del combate?", "Huir", JOptionPane.YES_NO_OPTION);
-            if (resp == JOptionPane.YES_OPTION) {
-                mainApp.cambiarPantalla("MenuPrincipal");
-            }
-        });
+        btnHuir.addActionListener(e -> mostrarOverlayConfirmacion(
+                "¿Huir del combate?",
+                "Perderás el progreso de esta batalla.",
+                () -> {
+                    ocultarOverlay();
+                    mainApp.cambiarPantalla("MenuPrincipal");
+                }
+        ));
         panelFondoCampo.add(btnHuir);
 
-        // Panel Rival
         lblSpriteRival = new JLabel();
         panelFondoCampo.add(lblSpriteRival);
 
@@ -128,7 +152,6 @@ public class PantallaCombate extends JPanel {
         configurarPanelInfo(panelInfoRival, lblNombreRival, lblTipoRival, lblHpTextoRival, barraHpRival);
         panelFondoCampo.add(panelInfoRival);
 
-        // Panel Jugador
         lblSpriteJugador = new JLabel();
         panelFondoCampo.add(lblSpriteJugador);
 
@@ -140,85 +163,76 @@ public class PantallaCombate extends JPanel {
         configurarPanelInfo(panelInfoJugador, lblNombreJugador, lblTipoJugador, lblHpTextoJugador, barraHpJugador);
         panelFondoCampo.add(panelInfoJugador);
 
-        panelFondoCampo.addComponentListener(new ComponentAdapter() {
+        // --- Overlay embebido (para reemplazar los JOptionPane) ---
+        overlay = crearOverlay();
+
+        campoLayered = new JLayeredPane();
+        campoLayered.setLayout(null);
+        campoLayered.add(panelFondoCampo, JLayeredPane.DEFAULT_LAYER);
+        campoLayered.add(overlay, JLayeredPane.PALETTE_LAYER);
+        overlay.setVisible(false);
+
+        campoLayered.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
+                int w = campoLayered.getWidth();
+                int h = campoLayered.getHeight();
+                panelFondoCampo.setBounds(0, 0, w, h);
+                overlay.setBounds(0, 0, w, h);
                 recolocarComponentesResponsivo();
             }
         });
 
-        contenedor.add(panelFondoCampo, BorderLayout.CENTER);
+        contenedor.add(campoLayered, BorderLayout.CENTER);
 
-        // 2. DERECHA: Panel amplio para el Historial de Batalla
-        JPanel panelDerecha = new JPanel(new BorderLayout(6, 6));
-        panelDerecha.setPreferredSize(new Dimension(350, 0));
-        panelDerecha.setBackground(new Color(18, 22, 34));
-        panelDerecha.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(UIUtils.AZUL_MEDIO, 2),
-                new EmptyBorder(10, 10, 10, 10)
-        ));
+        JPanel panelInferior = new JPanel(new BorderLayout());
+        panelInferior.setBackground(new Color(12, 15, 24));
 
-        JLabel lblTituloLog = new JLabel("REGISTRO DE BATALLA", SwingConstants.CENTER);
-        lblTituloLog.setFont(new Font("SansSerif", Font.BOLD, 16));
-        lblTituloLog.setForeground(UIUtils.AMARILLO);
-        lblTituloLog.setBorder(new EmptyBorder(4, 0, 8, 0));
-        panelDerecha.add(lblTituloLog, BorderLayout.NORTH);
-
-        txtHistorialBatalla = new JTextArea();
+        txtHistorialBatalla = new JTextArea(8, 50);
         txtHistorialBatalla.setEditable(false);
-        txtHistorialBatalla.setFont(new Font("Monospaced", Font.PLAIN, 13));
-        txtHistorialBatalla.setBackground(new Color(12, 15, 24));
-        txtHistorialBatalla.setForeground(new Color(230, 235, 245));
         txtHistorialBatalla.setLineWrap(true);
         txtHistorialBatalla.setWrapStyleWord(true);
-        txtHistorialBatalla.setMargin(new Insets(8, 8, 8, 8));
-
+        txtHistorialBatalla.setFont(new Font("Monospaced", Font.BOLD, 15));
+        txtHistorialBatalla.setBackground(new Color(20, 24, 36));
+        txtHistorialBatalla.setForeground(new Color(240, 240, 240));
+        txtHistorialBatalla.setBorder(new EmptyBorder(10, 16, 10, 16));
         JScrollPane scrollLog = new JScrollPane(txtHistorialBatalla);
-        scrollLog.setBorder(BorderFactory.createLineBorder(new Color(45, 55, 78), 1));
-        panelDerecha.add(scrollLog, BorderLayout.CENTER);
+        scrollLog.setBorder(BorderFactory.createLineBorder(UIUtils.AZUL_MEDIO, 1));
+        scrollLog.setPreferredSize(new Dimension(100, 190));
+        panelInferior.add(scrollLog, BorderLayout.CENTER);
 
-        contenedor.add(panelDerecha, BorderLayout.EAST);
-
-        // 3. ABAJO: Menú con los 5 botones de acción
-        contenedor.add(crearPanelMenu(), BorderLayout.SOUTH);
+        panelInferior.add(crearPanelMenu(), BorderLayout.SOUTH);
+        contenedor.add(panelInferior, BorderLayout.SOUTH);
 
         return contenedor;
     }
 
-    /**
-     * Posiciona los elementos en el campo según la resolución de pantalla
-     */
     private void recolocarComponentesResponsivo() {
         int w = panelFondoCampo.getWidth();
         int h = panelFondoCampo.getHeight();
 
         if (w <= 0 || h <= 0) return;
 
-        // 1. Botón Huir
-        btnHuir.setBounds(20, 20, 100, 36);
+        btnHuir.setBounds(25, 20, 110, 36);
 
-        // 2. Info Rival (Arriba a la izquierda)
-        int infoW = 330;
-        int infoH = 105;
+        int infoW = 340;
+        int infoH = 95;
         int infoRivalX = (int) (w * 0.04);
-        int infoRivalY = (int) (h * 0.08);
+        int infoRivalY = (int) (h * 0.10);
         panelInfoRival.setBounds(infoRivalX, infoRivalY, infoW, infoH);
 
-        // 3. Sprite Rival (Arriba a la derecha)
         int spriteRivalSize = Math.max(220, (int) (h * 0.42));
-        int spriteRivalX = (int) (w * 0.65) - (spriteRivalSize / 2);
+        int spriteRivalX = (int) (w * 0.66) - (spriteRivalSize / 2);
         int spriteRivalY = (int) (h * 0.28) - (spriteRivalSize / 2);
         lblSpriteRival.setBounds(spriteRivalX, spriteRivalY, spriteRivalSize, spriteRivalSize);
 
-        // 4. Sprite Jugador (Abajo a la izquierda)
         int spriteJugadorSize = Math.max(260, (int) (h * 0.52));
         int spriteJugadorX = (int) (w * 0.22) - (spriteJugadorSize / 2);
-        int spriteJugadorY = h - spriteJugadorSize - (int) (h * 0.04);
+        int spriteJugadorY = h - spriteJugadorSize - (int) (h * 0.05);
         lblSpriteJugador.setBounds(spriteJugadorX, spriteJugadorY, spriteJugadorSize, spriteJugadorSize);
 
-        // 5. Info Jugador (Abajo a la derecha)
-        int infoJugadorX = (int) (w * 0.58);
-        int infoJugadorY = h - infoH - (int) (h * 0.12);
+        int infoJugadorX = (int) (w * 0.62);
+        int infoJugadorY = h - infoH - (int) (h * 0.14);
         panelInfoJugador.setBounds(infoJugadorX, infoJugadorY, infoW, infoH);
 
         panelFondoCampo.revalidate();
@@ -227,14 +241,14 @@ public class PantallaCombate extends JPanel {
 
     private JPanel crearPanelInfo() {
         TarjetaRedondeada panel = new TarjetaRedondeada(UIUtils.AZUL_MEDIO, UIUtils.AMARILLO_OSCURO, 14);
-        panel.setLayout(new GridLayout(4, 1, 3, 3));
-        panel.setBorder(new EmptyBorder(10, 14, 10, 14));
+        panel.setLayout(new GridLayout(4, 1, 2, 2));
+        panel.setBorder(new EmptyBorder(8, 12, 8, 12));
         return panel;
     }
 
     private void configurarPanelInfo(JPanel panel, JLabel lblNombre, JLabel lblTipo, JLabel lblHpTexto, JProgressBar barra) {
         lblNombre.setForeground(Color.WHITE);
-        lblNombre.setFont(new Font("SansSerif", Font.BOLD, 15));
+        lblNombre.setFont(new Font("SansSerif", Font.BOLD, 16));
 
         lblTipo.setForeground(UIUtils.AMARILLO);
         lblTipo.setFont(new Font("SansSerif", Font.ITALIC, 12));
@@ -245,7 +259,7 @@ public class PantallaCombate extends JPanel {
         barra.setPreferredSize(new Dimension(100, 14));
         barra.setBorderPainted(false);
 
-        lblHpTexto.setForeground(new Color(220, 225, 235));
+        lblHpTexto.setForeground(new Color(210, 215, 225));
         lblHpTexto.setFont(new Font("SansSerif", Font.BOLD, 13));
 
         panel.add(lblNombre);
@@ -266,10 +280,10 @@ public class PantallaCombate extends JPanel {
         btnHistorial = UIUtils.crearBotonEstilizado("HISTORIAL");
 
         btnAtacar.addActionListener(e -> ejecutarAtaque());
-        btnCambiar.addActionListener(e -> mostrarDialogoCambio());
-        btnObjetos.addActionListener(e -> mostrarDialogoObjetos());
-        btnEquipo.addActionListener(e -> mostrarDialogoEquipo());
-        btnHistorial.addActionListener(e -> mostrarDialogoHistorialCompleto());
+        btnCambiar.addActionListener(e -> mostrarOverlayCambio());
+        btnObjetos.addActionListener(e -> mostrarOverlayObjetos());
+        btnEquipo.addActionListener(e -> mostrarOverlayEquipo());
+        btnHistorial.addActionListener(e -> mostrarOverlayHistorialCompleto());
 
         panelMenu.add(btnAtacar);
         panelMenu.add(btnCambiar);
@@ -280,15 +294,209 @@ public class PantallaCombate extends JPanel {
         return panelMenu;
     }
 
+    private void setBotonesHabilitados(boolean habilitado) {
+        btnAtacar.setEnabled(habilitado);
+        btnCambiar.setEnabled(habilitado);
+        btnObjetos.setEnabled(habilitado);
+        btnHuir.setEnabled(habilitado);
+        // "Mi equipo" e "Historial" se pueden consultar siempre
+    }
+
+    // ============================================================
+    //  ACCIONES DE COMBATE (con animación de turnos)
+    // ============================================================
+
     private void ejecutarAtaque() {
         if (combateActual == null || combateActual.isFinalizado()) return;
 
+        String textoAntes = historial.obtenerTextoCompleto();
         combateActual.atacar();
-        popularBatalla();
-        verificarFinCombate();
+        animarNuevosMensajes(textoAntes, () -> {
+            popularBatalla();
+            verificarFinCombate();
+        });
     }
 
-    private void mostrarDialogoCambio() {
+    private void animarNuevosMensajes(String textoAntes, Runnable alTerminar) {
+        String textoCompleto = historial.obtenerTextoCompleto();
+        String nuevo = textoCompleto.length() > textoAntes.length()
+                ? textoCompleto.substring(textoAntes.length())
+                : "";
+
+        colaMensajes.clear();
+        for (String linea : nuevo.split("\n")) {
+            String limpia = linea.replace("--------------------------------", "").trim();
+            if (!limpia.isEmpty()) {
+                colaMensajes.add(limpia);
+            }
+        }
+
+        this.alTerminarAnimacion = alTerminar;
+
+        if (colaMensajes.isEmpty()) {
+            if (alTerminar != null) alTerminar.run();
+            return;
+        }
+
+        setBotonesHabilitados(false);
+        if (timerMensajes != null && timerMensajes.isRunning()) {
+            timerMensajes.stop();
+        }
+
+        timerMensajes = new Timer(900, null);
+        timerMensajes.addActionListener(e -> {
+            if (colaMensajes.isEmpty()) {
+                timerMensajes.stop();
+                setBotonesHabilitados(true);
+                if (alTerminarAnimacion != null) alTerminarAnimacion.run();
+                return;
+            }
+            String siguiente = colaMensajes.remove(0);
+            txtHistorialBatalla.append(siguiente + "\n");
+            txtHistorialBatalla.setCaretPosition(txtHistorialBatalla.getDocument().getLength());
+        });
+        timerMensajes.setInitialDelay(0);
+        timerMensajes.start();
+    }
+
+    // ============================================================
+    //  OVERLAY EMBEBIDO (reemplaza JOptionPane)
+    // ============================================================
+
+    private JPanel crearOverlay() {
+        JPanel fondoOscuro = new JPanel(new GridBagLayout());
+        fondoOscuro.setOpaque(true);
+        fondoOscuro.setBackground(new Color(0, 0, 0, 160));
+
+        TarjetaRedondeada tarjeta = new TarjetaRedondeada(UIUtils.AZUL_MEDIO, UIUtils.AMARILLO_OSCURO, 18);
+        tarjeta.setLayout(new BorderLayout(0, 14));
+        tarjeta.setBorder(new EmptyBorder(20, 24, 20, 24));
+        tarjeta.setPreferredSize(new Dimension(560, 380));
+
+        JPanel encabezado = new JPanel(new BorderLayout());
+        encabezado.setOpaque(false);
+        lblOverlayTitulo = new JLabel("Título", SwingConstants.CENTER);
+        lblOverlayTitulo.setForeground(UIUtils.AMARILLO);
+        lblOverlayTitulo.setFont(new Font("SansSerif", Font.BOLD, 22));
+        encabezado.add(lblOverlayTitulo, BorderLayout.CENTER);
+
+        JButton btnCerrar = new JButton("✕");
+        btnCerrar.setFocusPainted(false);
+        btnCerrar.setBorderPainted(false);
+        btnCerrar.setContentAreaFilled(false);
+        btnCerrar.setForeground(UIUtils.TEXTO_CLARO);
+        btnCerrar.setFont(new Font("SansSerif", Font.BOLD, 16));
+        btnCerrar.addActionListener(e -> ocultarOverlay());
+        encabezado.add(btnCerrar, BorderLayout.EAST);
+
+        tarjeta.add(encabezado, BorderLayout.NORTH);
+
+        panelOverlayContenido = new JPanel();
+        panelOverlayContenido.setOpaque(false);
+        JScrollPane scroll = new JScrollPane(panelOverlayContenido);
+        scroll.setBorder(null);
+        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(false);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        tarjeta.add(scroll, BorderLayout.CENTER);
+
+        fondoOscuro.add(tarjeta);
+        return fondoOscuro;
+    }
+
+    private void mostrarOverlay(String titulo) {
+        lblOverlayTitulo.setText(titulo);
+        panelOverlayContenido.removeAll();
+        panelOverlayContenido.setLayout(new GridLayout(0, 1, 0, 10));
+        overlay.setVisible(true);
+        overlay.revalidate();
+        overlay.repaint();
+    }
+
+    private void ocultarOverlay() {
+        overlay.setVisible(false);
+    }
+
+    /** Muestra un mensaje simple con un botón de "Aceptar". */
+    private void mostrarOverlayMensaje(String titulo, String mensaje) {
+        mostrarOverlayMensaje(titulo, mensaje, null);
+    }
+
+    private void mostrarOverlayMensaje(String titulo, String mensaje, Runnable alAceptar) {
+        mostrarOverlay(titulo);
+        panelOverlayContenido.setLayout(new BorderLayout(0, 16));
+
+        JTextArea txt = new JTextArea(mensaje);
+        txt.setEditable(false);
+        txt.setLineWrap(true);
+        txt.setWrapStyleWord(true);
+        txt.setOpaque(false);
+        txt.setForeground(UIUtils.TEXTO_CLARO);
+        txt.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        panelOverlayContenido.add(txt, BorderLayout.CENTER);
+
+        JButton btnOk = UIUtils.crearBotonEstilizado("Aceptar");
+        btnOk.addActionListener(e -> {
+            ocultarOverlay();
+            if (alAceptar != null) alAceptar.run();
+        });
+        JPanel panelBoton = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        panelBoton.setOpaque(false);
+        panelBoton.add(btnOk);
+        panelOverlayContenido.add(panelBoton, BorderLayout.SOUTH);
+
+        panelOverlayContenido.revalidate();
+        panelOverlayContenido.repaint();
+    }
+
+    /** Muestra un mensaje de confirmación con Sí / No. */
+    private void mostrarOverlayConfirmacion(String titulo, String mensaje, Runnable siAccion) {
+        mostrarOverlay(titulo);
+        panelOverlayContenido.setLayout(new BorderLayout(0, 16));
+
+        JLabel lbl = new JLabel("<html><div style='text-align:center;'>" + mensaje + "</div></html>", SwingConstants.CENTER);
+        lbl.setForeground(UIUtils.TEXTO_CLARO);
+        lbl.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        panelOverlayContenido.add(lbl, BorderLayout.CENTER);
+
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 16, 0));
+        panelBotones.setOpaque(false);
+        JButton btnSi = UIUtils.crearBotonExito("Sí");
+        JButton btnNo = UIUtils.crearBotonSecundario("No");
+        btnSi.addActionListener(e -> siAccion.run());
+        btnNo.addActionListener(e -> ocultarOverlay());
+        panelBotones.add(btnSi);
+        panelBotones.add(btnNo);
+        panelOverlayContenido.add(panelBotones, BorderLayout.SOUTH);
+
+        panelOverlayContenido.revalidate();
+        panelOverlayContenido.repaint();
+    }
+
+    /** Muestra una lista de opciones, cada una como un botón. */
+    private void mostrarOverlayOpciones(String titulo, String[] opciones, Consumer<Integer> alSeleccionar) {
+        mostrarOverlay(titulo);
+        panelOverlayContenido.setLayout(new GridLayout(0, 1, 0, 10));
+
+        for (int i = 0; i < opciones.length; i++) {
+            final int idx = i;
+            JButton btn = UIUtils.crearBotonEstilizado(opciones[i]);
+            btn.addActionListener(e -> {
+                ocultarOverlay();
+                alSeleccionar.accept(idx);
+            });
+            panelOverlayContenido.add(btn);
+        }
+
+        panelOverlayContenido.revalidate();
+        panelOverlayContenido.repaint();
+    }
+
+    // ============================================================
+    //  DIÁLOGOS CONVERTIDOS A OVERLAY
+    // ============================================================
+
+    private void mostrarOverlayCambio() {
         if (combateActual == null || combateActual.isFinalizado()) return;
 
         Pokemon[] equipo = combateActual.getJugador().getEquipo().toArray();
@@ -301,62 +509,47 @@ public class PantallaCombate extends JPanel {
                     + (p == activo ? " [ACTIVO]" : (p.estaDerrotado() ? " [DERROTADO]" : ""));
         }
 
-        int seleccion = JOptionPane.showOptionDialog(
-                this,
-                "Selecciona el Pokémon a enviar al combate:",
-                "Cambiar Pokémon",
-                JOptionPane.DEFAULT_OPTION,
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                opciones,
-                opciones[0]
-        );
-
-        if (seleccion >= 0 && seleccion < equipo.length) {
+        mostrarOverlayOpciones("Cambiar Pokémon", opciones, seleccion -> {
             Pokemon elegido = equipo[seleccion];
             if (elegido == activo) {
-                JOptionPane.showMessageDialog(this, "Ese Pokémon ya está combatiendo.", "Aviso", JOptionPane.WARNING_MESSAGE);
+                mostrarOverlayMensaje("Aviso", "Ese Pokémon ya está combatiendo.");
                 return;
             }
             if (elegido.estaDerrotado()) {
-                JOptionPane.showMessageDialog(this, "No puedes seleccionar un Pokémon derrotado.", "Inválido", JOptionPane.ERROR_MESSAGE);
+                mostrarOverlayMensaje("Inválido", "No puedes seleccionar un Pokémon derrotado.");
                 return;
             }
 
+            String textoAntes = historial.obtenerTextoCompleto();
             boolean cambio = combateActual.cambiarPokemon(elegido.getNombre());
             if (cambio) {
-                popularBatalla();
-                recolocarComponentesResponsivo();
-                verificarFinCombate();
+                animarNuevosMensajes(textoAntes, () -> {
+                    popularBatalla();
+                    verificarFinCombate();
+                });
             }
-        }
+        });
     }
 
-    private void mostrarDialogoObjetos() {
+    private void mostrarOverlayObjetos() {
         if (combateActual == null || combateActual.isFinalizado()) return;
 
         Objeto[] inventario = combateActual.getJugador().getInventario().toArray();
+        if (inventario.length == 0) {
+            mostrarOverlayMensaje("Mochila de Objetos", "No tienes objetos disponibles.");
+            return;
+        }
+
         String[] opciones = new String[inventario.length];
         for (int i = 0; i < inventario.length; i++) {
             Objeto obj = inventario[i];
             opciones[i] = obj.getNombre() + " (x" + obj.getCantidad() + ") - " + obj.getDescripcion();
         }
 
-        int seleccion = JOptionPane.showOptionDialog(
-                this,
-                "Selecciona un objeto para utilizar:",
-                "Mochila de Objetos",
-                JOptionPane.DEFAULT_OPTION,
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                opciones,
-                opciones[0]
-        );
-
-        if (seleccion >= 0 && seleccion < inventario.length) {
+        mostrarOverlayOpciones("Mochila de Objetos", opciones, seleccion -> {
             Objeto obj = inventario[seleccion];
             if (obj.getCantidad() <= 0) {
-                JOptionPane.showMessageDialog(this, "No quedan unidades de " + obj.getNombre() + ".", "Agotado", JOptionPane.WARNING_MESSAGE);
+                mostrarOverlayMensaje("Agotado", "No quedan unidades de " + obj.getNombre() + ".");
                 return;
             }
 
@@ -367,43 +560,43 @@ public class PantallaCombate extends JPanel {
                     pOpciones[i] = equipo[i].getNombre() + (equipo[i].estaDerrotado() ? " [DERROTADO]" : " [VIVO]");
                 }
 
-                int selPkmn = JOptionPane.showOptionDialog(
-                        this, "Selecciona a quién revivir:", "Revivir",
-                        JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, pOpciones, pOpciones[0]);
-
-                if (selPkmn >= 0 && selPkmn < equipo.length) {
+                mostrarOverlayOpciones("Selecciona a quién revivir", pOpciones, selPkmn -> {
                     Pokemon objetivo = equipo[selPkmn];
                     if (!objetivo.estaDerrotado()) {
-                        JOptionPane.showMessageDialog(this, objetivo.getNombre() + " ya tiene salud.", "Aviso", JOptionPane.WARNING_MESSAGE);
+                        mostrarOverlayMensaje("Aviso", objetivo.getNombre() + " ya tiene salud.");
                         return;
                     }
+                    String textoAntesRevivir = historial.obtenerTextoCompleto();
                     obj.usar(objetivo);
                     historial.agregar(combateActual.getJugador().getUsername() + " utilizó " + obj.getNombre() + " en " + objetivo.getNombre() + ".");
                     combateActual.contraataqueRival();
-                    popularBatalla();
-                    verificarFinCombate();
-                }
+                    animarNuevosMensajes(textoAntesRevivir, () -> {
+                        popularBatalla();
+                        verificarFinCombate();
+                    });
+                });
             } else {
+                String textoAntes = historial.obtenerTextoCompleto();
                 boolean exito = combateActual.usarObjeto(obj.getNombre());
                 if (!exito) {
-                    JOptionPane.showMessageDialog(this, "El Pokémon activo ya tiene la salud al máximo.", "Sin efecto", JOptionPane.WARNING_MESSAGE);
+                    mostrarOverlayMensaje("Sin efecto", "El Pokémon activo ya tiene la salud al máximo.");
                 } else {
-                    popularBatalla();
-                    verificarFinCombate();
+                    animarNuevosMensajes(textoAntes, () -> {
+                        popularBatalla();
+                        verificarFinCombate();
+                    });
                 }
             }
-        }
+        });
     }
 
-    private void mostrarDialogoEquipo() {
+    private void mostrarOverlayEquipo() {
         if (combateActual == null) return;
 
         Pokemon[] equipo = combateActual.getJugador().getEquipo().toArray();
         StringBuilder sb = new StringBuilder();
-        sb.append("=== ESTADO DEL EQUIPO ===\n\n");
 
-        for (int i = 0; i < equipo.length; i++) {
-            Pokemon p = equipo[i];
+        for (Pokemon p : equipo) {
             sb.append(p.getNombre()).append("  -  Nv. ").append(p.getNivel()).append("\n")
               .append("HP: ").append(p.getHpActual()).append("/").append(p.getHpMax())
               .append(p.estaDerrotado() ? " [DERROTADO]" : (p == combateActual.getJugador().getEquipo().getPokemonActivo() ? " [ACTIVO]" : " [DISPONIBLE]"))
@@ -412,27 +605,12 @@ public class PantallaCombate extends JPanel {
         }
         sb.append("Pokémon disponibles: ").append(combateActual.getJugador().getEquipo().contarDisponibles());
 
-        JTextArea txt = new JTextArea(sb.toString());
-        txt.setEditable(false);
-        txt.setFont(new Font("Monospaced", Font.PLAIN, 13));
-        txt.setBackground(new Color(25, 30, 42));
-        txt.setForeground(Color.WHITE);
-
-        JOptionPane.showMessageDialog(this, new JScrollPane(txt), "Mi Equipo", JOptionPane.PLAIN_MESSAGE);
+        mostrarOverlayMensaje("Mi Equipo", sb.toString());
     }
 
-    private void mostrarDialogoHistorialCompleto() {
+    private void mostrarOverlayHistorialCompleto() {
         if (historial == null) return;
-
-        JTextArea txt = new JTextArea(historial.obtenerTextoCompleto());
-        txt.setEditable(false);
-        txt.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        txt.setBackground(new Color(25, 30, 42));
-        txt.setForeground(Color.WHITE);
-
-        JScrollPane scroll = new JScrollPane(txt);
-        scroll.setPreferredSize(new Dimension(460, 340));
-        JOptionPane.showMessageDialog(this, scroll, "Historial Completo de Batalla", JOptionPane.PLAIN_MESSAGE);
+        mostrarOverlayMensaje("Historial Completo de Batalla", historial.obtenerTextoCompleto());
     }
 
     private void verificarFinCombate() {
@@ -443,27 +621,27 @@ public class PantallaCombate extends JPanel {
                     ? "¡Has vencido a " + combateActual.getRival().getUsername() + "!"
                     : "Todos tus Pokémon han caído ante " + combateActual.getRival().getUsername() + ".";
 
-            JOptionPane.showMessageDialog(this, mensaje, titulo,
-                    ganoJugador ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE);
-
-            mainApp.cambiarPantalla("MenuPrincipal");
+            mostrarOverlayMensaje(titulo, mensaje, () -> mainApp.cambiarPantalla("MenuPrincipal"));
             return;
         }
 
         Pokemon activo = combateActual.getJugador().getEquipo().getPokemonActivo();
         if (activo != null && activo.estaDerrotado() && combateActual.getJugador().getEquipo().tieneVivos()) {
-            JOptionPane.showMessageDialog(this, "¡Tu Pokémon activo cayó! Elige a otro compañero.", "Cambio Forzoso", JOptionPane.WARNING_MESSAGE);
-            mostrarDialogoCambio();
+            mostrarOverlayMensaje("Cambio Forzoso", "¡Tu Pokémon activo cayó! Elige a otro compañero.", this::mostrarOverlayCambio);
         }
     }
+
+    // ============================================================
+    //  CICLO DE VIDA DEL COMBATE
+    // ============================================================
 
     public void iniciarNuevoCombate() {
         Usuario jugador = mainApp.getUsuarioLogueado();
         if (jugador == null) return;
 
         if (jugador.getEquipo().estaVacia()) {
-            JOptionPane.showMessageDialog(this, "Debes tener al menos 1 Pokémon en tu equipo para combatir.", "Equipo Vacío", JOptionPane.WARNING_MESSAGE);
-            mainApp.cambiarPantalla("ArmarEquipo");
+            mostrarOverlayMensaje("Equipo Vacío", "Debes tener al menos 1 Pokémon en tu equipo para combatir.",
+                    () -> mainApp.cambiarPantalla("ArmarEquipo"));
             return;
         }
 
@@ -471,6 +649,11 @@ public class PantallaCombate extends JPanel {
         rivalActual = mainApp.getBaseDatosUsuarios().obtenerRivalAleatorio();
         historial = new ListaHistorial();
         combateActual = new Combate(jugador, rivalActual, historial);
+
+        txtHistorialBatalla.setText("");
+        // Limpia los sprites para evitar que se vea el pokémon del combate anterior
+        lblSpriteJugador.setIcon(null);
+        lblSpriteRival.setIcon(null);
 
         cardInterno.show(contenedorInterno, "Buscando");
         animarBusquedaRival();
@@ -483,21 +666,33 @@ public class PantallaCombate extends JPanel {
         int spriteSize = Math.max(240, (int) (panelFondoCampo.getHeight() * 0.45));
 
         if (pJugador != null) {
-            lblSpriteJugador.setIcon(cargarSpriteJugador(pJugador.getRutaImagen(), spriteSize + 30, spriteSize + 30));
+            actualizarSprite(lblSpriteJugador, pJugador.getRutaImagen().replace(".png", "Back.png"), spriteSize + 30, spriteSize + 30);
             lblNombreJugador.setText(pJugador.getNombre() + " (Nv. " + pJugador.getNivel() + ")");
             lblTipoJugador.setText("Tipo: " + pJugador.getTiposString());
             actualizarBarra(barraHpJugador, lblHpTextoJugador, pJugador);
         }
 
         if (pRival != null) {
-            lblSpriteRival.setIcon(cargarSprite(pRival.getRutaImagen(), spriteSize, spriteSize));
+            actualizarSprite(lblSpriteRival, pRival.getRutaImagen(), spriteSize, spriteSize);
             lblNombreRival.setText(pRival.getNombre() + " (Nv. " + pRival.getNivel() + ")");
             lblTipoRival.setText("Tipo: " + pRival.getTiposString());
             actualizarBarra(barraHpRival, lblHpTextoRival, pRival);
         }
 
-        txtHistorialBatalla.setText(historial.obtenerTextoCompleto());
         txtHistorialBatalla.setCaretPosition(txtHistorialBatalla.getDocument().getLength());
+    }
+
+    /**
+     * Reemplaza el ícono del sprite de forma segura: primero lo limpia y
+     * fuerza un repintado antes de asignar el nuevo, evitando que quede
+     * "pegada" la imagen anterior al cambiar de Pokémon.
+     */
+    private void actualizarSprite(JLabel label, String nombreArchivo, int ancho, int alto) {
+        label.setIcon(null);
+        ImageIcon icono = cargarSprite(nombreArchivo, ancho, alto);
+        label.setIcon(icono);
+        label.revalidate();
+        label.repaint();
     }
 
     private void actualizarBarra(JProgressBar barra, JLabel lblTexto, Pokemon p) {
@@ -512,24 +707,14 @@ public class PantallaCombate extends JPanel {
         lblTexto.setText("HP: " + p.getHpActual() + " / " + p.getHpMax());
     }
 
-    /**
-     * Carga el sprite de espalda y si no existe usa la imagen frontal de respaldo para evitar que desaparezca
-     */
-    private ImageIcon cargarSpriteJugador(String nombreArchivo, int ancho, int alto) {
-        String nombreBack = nombreArchivo.replace(".png", "Back.png");
-        URL urlBack = getClass().getResource("/Sprites/" + nombreBack);
-        if (urlBack != null) {
-            Image escalada = new ImageIcon(urlBack).getImage().getScaledInstance(ancho, alto, Image.SCALE_SMOOTH);
-            return new ImageIcon(escalada);
-        }
-        // Fallback: Si no tiene Back.png, carga el Sprite frontal normal
-        return cargarSprite(nombreArchivo, ancho, alto);
-    }
-
     private ImageIcon cargarSprite(String nombreArchivo, int ancho, int alto) {
         URL url = getClass().getResource("/Sprites/" + nombreArchivo);
         if (url != null) {
-            Image escalada = new ImageIcon(url).getImage().getScaledInstance(ancho, alto, Image.SCALE_SMOOTH);
+            ImageIcon original = new ImageIcon(url);
+            // Espera a que la imagen termine de cargar antes de escalarla,
+            // para evitar sprites a medio dibujar cuando se cambia rápido.
+            new ImageIcon(original.getImage()).getImage();
+            Image escalada = original.getImage().getScaledInstance(ancho, alto, Image.SCALE_SMOOTH);
             return new ImageIcon(escalada);
         }
         Image placeholder = new java.awt.image.BufferedImage(ancho, alto, java.awt.image.BufferedImage.TYPE_INT_ARGB);
