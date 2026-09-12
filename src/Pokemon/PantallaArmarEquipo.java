@@ -15,7 +15,11 @@ public class PantallaArmarEquipo extends JPanel {
     private final TarjetaRedondeada[] tarjetasSlots = new TarjetaRedondeada[MAX_EQUIPO];
     private final JLabel lblContador;
 
-  
+ 
+    private JPanel panelNotificacion;
+    private JLabel lblNotificacion;
+    private Timer timerNotificacion;
+
     private Pokemon[] equipoLocal = new Pokemon[MAX_EQUIPO];
     private int cantidadLocal = 0;
 
@@ -28,16 +32,24 @@ public class PantallaArmarEquipo extends JPanel {
         fondo.setBorder(new EmptyBorder(20, 30, 20, 30));
         add(fondo, BorderLayout.CENTER);
 
-        
+
         JPanel panelHeader = new JPanel(new BorderLayout());
         panelHeader.setOpaque(false);
         JLabel titulo = UIUtils.crearTitulo("CONSTRUCTOR DE EQUIPO", 34);
-        panelHeader.add(titulo, BorderLayout.CENTER);
+        panelHeader.add(titulo, BorderLayout.NORTH);
 
         lblContador = new JLabel("Equipo: 0 / " + MAX_EQUIPO, SwingConstants.CENTER);
         lblContador.setForeground(UIUtils.AMARILLO_OSCURO);
         lblContador.setFont(new Font("SansSerif", Font.BOLD, 16));
-        panelHeader.add(lblContador, BorderLayout.SOUTH);
+        panelHeader.add(lblContador, BorderLayout.CENTER);
+
+        panelNotificacion = new JPanel(new BorderLayout());
+        panelNotificacion.setBorder(new EmptyBorder(8, 16, 8, 16));
+        panelNotificacion.setVisible(false);
+        lblNotificacion = new JLabel("", SwingConstants.CENTER);
+        lblNotificacion.setFont(new Font("SansSerif", Font.BOLD, 14));
+        panelNotificacion.add(lblNotificacion, BorderLayout.CENTER);
+        panelHeader.add(panelNotificacion, BorderLayout.SOUTH);
 
         fondo.add(panelHeader, BorderLayout.NORTH);
 
@@ -58,7 +70,7 @@ public class PantallaArmarEquipo extends JPanel {
 
         panelCentro.add(scrollSeleccion, BorderLayout.CENTER);
 
-      
+
         JPanel panelSlots = new JPanel(new GridLayout(1, MAX_EQUIPO, 14, 14));
         panelSlots.setOpaque(false);
         panelSlots.setPreferredSize(new Dimension(0, 150));
@@ -82,7 +94,7 @@ public class PantallaArmarEquipo extends JPanel {
         panelBotones.add(btnVolver);
         fondo.add(panelBotones, BorderLayout.SOUTH);
 
-    
+
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentShown(ComponentEvent e) {
@@ -161,11 +173,12 @@ public class PantallaArmarEquipo extends JPanel {
         slot.repaint();
     }
 
-  
+
     private void cargarEquipoDesdeUsuario() {
         Usuario usuario = mainApp.getUsuarioLogueado();
         equipoLocal = new Pokemon[MAX_EQUIPO];
         cantidadLocal = 0;
+        ocultarNotificacion();
 
         if (usuario != null) {
             Pokemon[] real = usuario.getEquipo().toArray();
@@ -176,14 +189,14 @@ public class PantallaArmarEquipo extends JPanel {
         refrescarSlots();
     }
 
-  
+
     private void agregarAlBuffer(String nombreDisplay) {
         if (mainApp.getUsuarioLogueado() == null) return;
 
         if (cantidadLocal >= MAX_EQUIPO) {
-            JOptionPane.showMessageDialog(this,
-                    "Tu equipo ya tiene " + MAX_EQUIPO + " Pokémon. Quita uno tocándolo abajo antes de agregar otro.",
-                    "Equipo completo", JOptionPane.WARNING_MESSAGE);
+            mostrarNotificacion(
+                    "Tu equipo ya tiene " + MAX_EQUIPO + " Pokémon. Toca uno de los recuadros de abajo para quitarlo antes de agregar otro.",
+                    true);
             return;
         }
 
@@ -209,10 +222,10 @@ public class PantallaArmarEquipo extends JPanel {
         Usuario usuario = mainApp.getUsuarioLogueado();
         if (usuario == null) return;
 
-        if (cantidadLocal == 0) {
-            JOptionPane.showMessageDialog(this,
-                    "Elegí al menos un Pokémon antes de guardar.",
-                    "Equipo vacío", JOptionPane.WARNING_MESSAGE);
+        if (cantidadLocal != MAX_EQUIPO) {
+            mostrarNotificacion(
+                    "Tu equipo debe tener exactamente " + MAX_EQUIPO + " Pokémon para poder guardarlo (tienes " + cantidadLocal + ").",
+                    true);
             return;
         }
 
@@ -221,9 +234,7 @@ public class PantallaArmarEquipo extends JPanel {
             usuario.getEquipo().add(equipoLocal[i]);
         }
 
-        JOptionPane.showMessageDialog(this,
-                "Equipo guardado para " + usuario.getUsername() + ".",
-                "Listo", JOptionPane.INFORMATION_MESSAGE);
+        mostrarNotificacion("Equipo guardado para " + usuario.getUsername() + ".", false);
     }
 
 
@@ -251,10 +262,40 @@ public class PantallaArmarEquipo extends JPanel {
             slot.repaint();
         }
 
-        lblContador.setText("Equipo: " + cantidadLocal + " / " + MAX_EQUIPO);
+        lblContador.setText("Equipo: " + cantidadLocal + " / " + MAX_EQUIPO
+                + (cantidadLocal == MAX_EQUIPO ? "  ✓ Listo para guardar" : "  (necesitas " + MAX_EQUIPO + " para guardar)"));
+        lblContador.setForeground(cantidadLocal == MAX_EQUIPO ? UIUtils.VERDE_OK : UIUtils.AMARILLO_OSCURO);
     }
 
-   
+
+
+    private void mostrarNotificacion(String mensaje, boolean esError) {
+        lblNotificacion.setText(mensaje);
+        panelNotificacion.setBackground(esError ? new Color(90, 30, 30) : new Color(24, 70, 46));
+        lblNotificacion.setForeground(esError ? UIUtils.ERROR_COLOR : new Color(150, 240, 190));
+        panelNotificacion.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(esError ? UIUtils.ERROR_COLOR : UIUtils.VERDE_OK, 1, true),
+                new EmptyBorder(8, 16, 8, 16)));
+        panelNotificacion.setVisible(true);
+        panelNotificacion.revalidate();
+        panelNotificacion.repaint();
+
+        if (timerNotificacion != null && timerNotificacion.isRunning()) {
+            timerNotificacion.stop();
+        }
+        timerNotificacion = new Timer(3500, e -> ocultarNotificacion());
+        timerNotificacion.setRepeats(false);
+        timerNotificacion.start();
+    }
+
+    private void ocultarNotificacion() {
+        panelNotificacion.setVisible(false);
+        if (timerNotificacion != null) {
+            timerNotificacion.stop();
+        }
+    }
+
+
     private ImageIcon cargarIcono(String nombreArchivo, int ancho, int alto) {
         URL url = getClass().getResource("/Sprites/" + nombreArchivo);
         if (url != null) {

@@ -32,6 +32,8 @@ public class RoundedButton extends JButton {
         setOpaque(false);
         setCursor(new Cursor(Cursor.HAND_CURSOR));
         setPreferredSize(new Dimension(220, 48));
+        setIconTextGap(14);
+        setHorizontalAlignment(SwingConstants.CENTER);
 
         addMouseListener(new MouseAdapter() {
             @Override
@@ -91,13 +93,41 @@ public class RoundedButton extends JButton {
         g2.setColor(new Color(255, 255, 255, isEnabled() ? 200 : 80));
         g2.draw(new RoundRectangle2D.Double(1, 1, w - 6, h - 6, radio, radio));
 
+        Icon icono = getIcon();
         FontMetrics fm = g2.getFontMetrics(getFont());
-        int x = (w - 4 - fm.stringWidth(getText())) / 2;
-        int y = (h - 4 - fm.getHeight()) / 2 + fm.getAscent();
+        String texto = getText();
+        int textoAncho = fm.stringWidth(texto);
+        int gap = getIconTextGap();
+
+        int contenidoAncho = textoAncho;
+        int iconoAncho = 0;
+        int iconoAlto = 0;
+        if (icono != null) {
+            iconoAncho = icono.getIconWidth();
+            iconoAlto = icono.getIconHeight();
+            contenidoAncho += iconoAncho + gap;
+        }
+
+        int startX;
+        if (icono != null && getHorizontalAlignment() == SwingConstants.LEFT) {
+            startX = 18;
+        } else {
+            startX = (w - 4 - contenidoAncho) / 2;
+        }
+
+        int iconoX = startX;
+        int iconoY = (h - 4 - iconoAlto) / 2;
+
+        int textoX = icono != null ? iconoX + iconoAncho + gap : startX;
+        int textoY = (h - 4 - fm.getHeight()) / 2 + fm.getAscent();
+
+        if (icono != null) {
+            icono.paintIcon(this, g2, iconoX, iconoY);
+        }
 
         g2.setColor(getForeground());
         g2.setFont(getFont());
-        g2.drawString(getText(), x, y);
+        g2.drawString(texto, textoX, textoY);
 
         g2.dispose();
     }
