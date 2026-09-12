@@ -8,7 +8,7 @@ import java.util.Random;
 
 public class PantallaCombate extends JPanel {
 
-    private final PokemonShenanigans mainApp;
+     private final PokemonShenanigans mainApp;
     private final CardLayout cardInterno;
     private final JPanel contenedorInterno;
 
@@ -16,9 +16,13 @@ public class PantallaCombate extends JPanel {
     private JLabel lblBuscando;
     private Timer timerBuscando;
 
-    // Elementos visuales de la batalla
+    // Elementos visuales del campo de batalla
+    private FondoImagen panelFondoCampo;
+    private JButton btnHuir;
     private JLabel lblSpriteJugador;
     private JLabel lblSpriteRival;
+    private JPanel panelInfoJugador;
+    private JPanel panelInfoRival;
     private JLabel lblNombreJugador;
     private JLabel lblNombreRival;
     private JLabel lblTipoJugador;
@@ -58,7 +62,7 @@ public class PantallaCombate extends JPanel {
 
         lblBuscando = new JLabel("Buscando rival...");
         lblBuscando.setForeground(UIUtils.AMARILLO_OSCURO);
-        lblBuscando.setFont(new Font("SansSerif", Font.BOLD, 28));
+        lblBuscando.setFont(new Font("SansSerif", Font.BOLD, 32));
 
         fondo.add(lblBuscando);
         return fondo;
@@ -84,6 +88,7 @@ public class PantallaCombate extends JPanel {
                 Timer pausa = new Timer(700, ev -> {
                     popularBatalla();
                     cardInterno.show(contenedorInterno, "Batalla");
+                    recolocarComponentesResponsivo();
                 });
                 pausa.setRepeats(false);
                 pausa.start();
@@ -95,48 +100,51 @@ public class PantallaCombate extends JPanel {
     private JPanel crearPanelBatalla() {
         JPanel contenedor = new JPanel(new BorderLayout());
 
-        FondoImagen fondo = new FondoImagen("/imagenes/background.png");
-        fondo.setLayout(null);
+        panelFondoCampo = new FondoImagen("/imagenes/background.png");
+        panelFondoCampo.setLayout(null);
 
-        JButton btnHuir = UIUtils.crearBotonSecundario("Huir");
-        btnHuir.setBounds(15, 12, 90, 32);
+        btnHuir = UIUtils.crearBotonSecundario("Huir");
         btnHuir.addActionListener(e -> {
             int resp = JOptionPane.showConfirmDialog(this, "¿Deseas huir del combate?", "Huir", JOptionPane.YES_NO_OPTION);
             if (resp == JOptionPane.YES_OPTION) {
                 mainApp.cambiarPantalla("MenuPrincipal");
             }
         });
-        fondo.add(btnHuir);
+        panelFondoCampo.add(btnHuir);
 
         // Panel Rival
         lblSpriteRival = new JLabel();
-        lblSpriteRival.setBounds(680, 20, 220, 220);
-        fondo.add(lblSpriteRival);
+        panelFondoCampo.add(lblSpriteRival);
 
-        JPanel panelInfoRival = crearPanelInfo();
+        panelInfoRival = crearPanelInfo();
         lblNombreRival = new JLabel();
         lblTipoRival = new JLabel();
         lblHpTextoRival = new JLabel();
         barraHpRival = new JProgressBar();
         configurarPanelInfo(panelInfoRival, lblNombreRival, lblTipoRival, lblHpTextoRival, barraHpRival);
-        panelInfoRival.setBounds(40, 45, 310, 95);
-        fondo.add(panelInfoRival);
+        panelFondoCampo.add(panelInfoRival);
 
         // Panel Jugador
         lblSpriteJugador = new JLabel();
-        lblSpriteJugador.setBounds(60, 260, 260, 260);
-        fondo.add(lblSpriteJugador);
+        panelFondoCampo.add(lblSpriteJugador);
 
-        JPanel panelInfoJugador = crearPanelInfo();
+        panelInfoJugador = crearPanelInfo();
         lblNombreJugador = new JLabel();
         lblTipoJugador = new JLabel();
         lblHpTextoJugador = new JLabel();
         barraHpJugador = new JProgressBar();
         configurarPanelInfo(panelInfoJugador, lblNombreJugador, lblTipoJugador, lblHpTextoJugador, barraHpJugador);
-        panelInfoJugador.setBounds(640, 340, 310, 95);
-        fondo.add(panelInfoJugador);
+        panelFondoCampo.add(panelInfoJugador);
 
-        contenedor.add(fondo, BorderLayout.CENTER);
+        // Listener para reposicionar dinámicamente cuando cambie el tamaño de la ventana
+        panelFondoCampo.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                recolocarComponentesResponsivo();
+            }
+        });
+
+        contenedor.add(panelFondoCampo, BorderLayout.CENTER);
 
         // Historial y Menú inferior
         JPanel panelInferior = new JPanel(new BorderLayout());
@@ -144,10 +152,10 @@ public class PantallaCombate extends JPanel {
 
         txtHistorialBatalla = new JTextArea(4, 50);
         txtHistorialBatalla.setEditable(false);
-        txtHistorialBatalla.setFont(new Font("Monospaced", Font.BOLD, 12));
+        txtHistorialBatalla.setFont(new Font("Monospaced", Font.BOLD, 13));
         txtHistorialBatalla.setBackground(new Color(20, 24, 36));
         txtHistorialBatalla.setForeground(new Color(240, 240, 240));
-        txtHistorialBatalla.setBorder(new EmptyBorder(6, 12, 6, 12));
+        txtHistorialBatalla.setBorder(new EmptyBorder(8, 14, 8, 14));
         JScrollPane scrollLog = new JScrollPane(txtHistorialBatalla);
         scrollLog.setBorder(BorderFactory.createLineBorder(UIUtils.AZUL_MEDIO, 1));
         panelInferior.add(scrollLog, BorderLayout.CENTER);
@@ -156,6 +164,46 @@ public class PantallaCombate extends JPanel {
         contenedor.add(panelInferior, BorderLayout.SOUTH);
 
         return contenedor;
+    }
+
+    /**
+     * Calcula las posiciones exactas de forma responsiva en base al tamaño de la pantalla
+     */
+    private void recolocarComponentesResponsivo() {
+        int w = panelFondoCampo.getWidth();
+        int h = panelFondoCampo.getHeight();
+
+        if (w <= 0 || h <= 0) return;
+
+        // 1. Botón Huir
+        btnHuir.setBounds(25, 20, 110, 36);
+
+        // 2. Info Rival (Arriba a la izquierda)
+        int infoW = 340;
+        int infoH = 95;
+        int infoRivalX = (int) (w * 0.04);
+        int infoRivalY = (int) (h * 0.10);
+        panelInfoRival.setBounds(infoRivalX, infoRivalY, infoW, infoH);
+
+        // 3. Sprite Rival (Arriba a la derecha, en su plataforma de hierba)
+        int spriteRivalSize = Math.max(220, (int) (h * 0.42));
+        int spriteRivalX = (int) (w * 0.66) - (spriteRivalSize / 2);
+        int spriteRivalY = (int) (h * 0.28) - (spriteRivalSize / 2);
+        lblSpriteRival.setBounds(spriteRivalX, spriteRivalY, spriteRivalSize, spriteRivalSize);
+
+        // 4. Sprite Jugador (Abajo a la izquierda, de espaldas en el frente)
+        int spriteJugadorSize = Math.max(260, (int) (h * 0.52));
+        int spriteJugadorX = (int) (w * 0.22) - (spriteJugadorSize / 2);
+        int spriteJugadorY = h - spriteJugadorSize - (int) (h * 0.05);
+        lblSpriteJugador.setBounds(spriteJugadorX, spriteJugadorY, spriteJugadorSize, spriteJugadorSize);
+
+        // 5. Info Jugador (Abajo a la derecha)
+        int infoJugadorX = (int) (w * 0.62);
+        int infoJugadorY = h - infoH - (int) (h * 0.14);
+        panelInfoJugador.setBounds(infoJugadorX, infoJugadorY, infoW, infoH);
+
+        panelFondoCampo.revalidate();
+        panelFondoCampo.repaint();
     }
 
     private JPanel crearPanelInfo() {
@@ -167,7 +215,7 @@ public class PantallaCombate extends JPanel {
 
     private void configurarPanelInfo(JPanel panel, JLabel lblNombre, JLabel lblTipo, JLabel lblHpTexto, JProgressBar barra) {
         lblNombre.setForeground(Color.WHITE);
-        lblNombre.setFont(new Font("SansSerif", Font.BOLD, 15));
+        lblNombre.setFont(new Font("SansSerif", Font.BOLD, 16));
 
         lblTipo.setForeground(UIUtils.AMARILLO);
         lblTipo.setFont(new Font("SansSerif", Font.ITALIC, 12));
@@ -175,11 +223,11 @@ public class PantallaCombate extends JPanel {
         barra.setStringPainted(false);
         barra.setForeground(new Color(76, 217, 100));
         barra.setBackground(new Color(40, 44, 56));
-        barra.setPreferredSize(new Dimension(100, 12));
+        barra.setPreferredSize(new Dimension(100, 14));
         barra.setBorderPainted(false);
 
         lblHpTexto.setForeground(new Color(210, 215, 225));
-        lblHpTexto.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        lblHpTexto.setFont(new Font("SansSerif", Font.BOLD, 13));
 
         panel.add(lblNombre);
         panel.add(lblTipo);
@@ -188,9 +236,9 @@ public class PantallaCombate extends JPanel {
     }
 
     private JPanel crearPanelMenu() {
-        JPanel panelMenu = new JPanel(new GridLayout(1, 5, 10, 10));
+        JPanel panelMenu = new JPanel(new GridLayout(1, 5, 12, 10));
         panelMenu.setBackground(new Color(12, 15, 24));
-        panelMenu.setBorder(new EmptyBorder(10, 15, 12, 15));
+        panelMenu.setBorder(new EmptyBorder(12, 20, 16, 20));
 
         btnAtacar = UIUtils.crearBotonEstilizado("ATACAR");
         btnCambiar = UIUtils.crearBotonEstilizado("CAMBIAR");
@@ -198,7 +246,6 @@ public class PantallaCombate extends JPanel {
         btnEquipo = UIUtils.crearBotonEstilizado("MI EQUIPO");
         btnHistorial = UIUtils.crearBotonEstilizado("HISTORIAL");
 
-        // AQUÍ ESTÁN TODOS LOS ACTION LISTENERS CONECTADOS Y FUNCIONANDO:
         btnAtacar.addActionListener(e -> ejecutarAtaque());
         btnCambiar.addActionListener(e -> mostrarDialogoCambio());
         btnObjetos.addActionListener(e -> mostrarDialogoObjetos());
@@ -364,7 +411,7 @@ public class PantallaCombate extends JPanel {
         txt.setForeground(Color.WHITE);
 
         JScrollPane scroll = new JScrollPane(txt);
-        scroll.setPreferredSize(new Dimension(420, 320));
+        scroll.setPreferredSize(new Dimension(460, 340));
         JOptionPane.showMessageDialog(this, scroll, "Historial Completo de Batalla", JOptionPane.PLAIN_MESSAGE);
     }
 
@@ -413,15 +460,17 @@ public class PantallaCombate extends JPanel {
         Pokemon pJugador = combateActual.getJugador().getEquipo().getPokemonActivo();
         Pokemon pRival = combateActual.getRival().getEquipo().getPokemonActivo();
 
+        int spriteSize = Math.max(240, (int) (panelFondoCampo.getHeight() * 0.45));
+
         if (pJugador != null) {
-            lblSpriteJugador.setIcon(cargarSprite(pJugador.getRutaImagen().replace(".png", "Back.png"), 230, 230));
+            lblSpriteJugador.setIcon(cargarSprite(pJugador.getRutaImagen().replace(".png", "Back.png"), spriteSize + 30, spriteSize + 30));
             lblNombreJugador.setText(pJugador.getNombre() + " (Nv. " + pJugador.getNivel() + ")");
             lblTipoJugador.setText("Tipo: " + pJugador.getTiposString());
             actualizarBarra(barraHpJugador, lblHpTextoJugador, pJugador);
         }
 
         if (pRival != null) {
-            lblSpriteRival.setIcon(cargarSprite(pRival.getRutaImagen(), 200, 200));
+            lblSpriteRival.setIcon(cargarSprite(pRival.getRutaImagen(), spriteSize, spriteSize));
             lblNombreRival.setText(pRival.getNombre() + " (Nv. " + pRival.getNivel() + ")");
             lblTipoRival.setText("Tipo: " + pRival.getTiposString());
             actualizarBarra(barraHpRival, lblHpTextoRival, pRival);
@@ -440,7 +489,7 @@ public class PantallaCombate extends JPanel {
         else if (pct > 0.2) barra.setForeground(new Color(255, 204, 0));
         else barra.setForeground(new Color(255, 59, 48));
 
-        lblTexto.setText("❤️ " + p.getHpActual() + " / " + p.getHpMax() + " HP");
+        lblTexto.setText("HP: " + p.getHpActual() + " / " + p.getHpMax());
     }
 
     private ImageIcon cargarSprite(String nombreArchivo, int ancho, int alto) {

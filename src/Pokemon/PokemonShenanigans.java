@@ -14,7 +14,9 @@ public class PokemonShenanigans extends JFrame {
 
     public PokemonShenanigans() {
         setTitle("Pokémon Shenanigans - Battle GUI");
-        setSize(1000, 750);
+        setSize(1280, 800);
+        setMinimumSize(new Dimension(1000, 700));
+        setExtendedState(JFrame.MAXIMIZED_BOTH); 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
