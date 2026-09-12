@@ -10,13 +10,15 @@ import java.util.Random;
 
 public class PantallaCombate extends JPanel {
 
-     private final PokemonShenanigans mainApp;
+    private final PokemonShenanigans mainApp;
     private final CardLayout cardInterno;
     private final JPanel contenedorInterno;
 
+    // Componentes de búsqueda
     private JLabel lblBuscando;
     private Timer timerBuscando;
 
+    // Elementos visuales del campo de batalla
     private FondoImagen panelFondoCampo;
     private JButton btnHuir;
     private JLabel lblSpriteJugador;
@@ -33,6 +35,7 @@ public class PantallaCombate extends JPanel {
     private JLabel lblHpTextoRival;
     private JTextArea txtHistorialBatalla;
 
+    // Botones de acción
     private JButton btnAtacar;
     private JButton btnCambiar;
     private JButton btnObjetos;
@@ -97,8 +100,10 @@ public class PantallaCombate extends JPanel {
     }
 
     private JPanel crearPanelBatalla() {
-        JPanel contenedor = new JPanel(new BorderLayout());
+        JPanel contenedor = new JPanel(new BorderLayout(8, 8));
+        contenedor.setBackground(new Color(12, 15, 24));
 
+        // 1. CENTRO: Campo de batalla con los sprites y las barras de HP
         panelFondoCampo = new FondoImagen("/imagenes/background.png");
         panelFondoCampo.setLayout(null);
 
@@ -111,6 +116,7 @@ public class PantallaCombate extends JPanel {
         });
         panelFondoCampo.add(btnHuir);
 
+        // Panel Rival
         lblSpriteRival = new JLabel();
         panelFondoCampo.add(lblSpriteRival);
 
@@ -122,6 +128,7 @@ public class PantallaCombate extends JPanel {
         configurarPanelInfo(panelInfoRival, lblNombreRival, lblTipoRival, lblHpTextoRival, barraHpRival);
         panelFondoCampo.add(panelInfoRival);
 
+        // Panel Jugador
         lblSpriteJugador = new JLabel();
         panelFondoCampo.add(lblSpriteJugador);
 
@@ -142,52 +149,76 @@ public class PantallaCombate extends JPanel {
 
         contenedor.add(panelFondoCampo, BorderLayout.CENTER);
 
-        JPanel panelInferior = new JPanel(new BorderLayout());
-        panelInferior.setBackground(new Color(12, 15, 24));
+        // 2. DERECHA: Panel amplio para el Historial de Batalla
+        JPanel panelDerecha = new JPanel(new BorderLayout(6, 6));
+        panelDerecha.setPreferredSize(new Dimension(350, 0));
+        panelDerecha.setBackground(new Color(18, 22, 34));
+        panelDerecha.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(UIUtils.AZUL_MEDIO, 2),
+                new EmptyBorder(10, 10, 10, 10)
+        ));
 
-        txtHistorialBatalla = new JTextArea(4, 50);
+        JLabel lblTituloLog = new JLabel("REGISTRO DE BATALLA", SwingConstants.CENTER);
+        lblTituloLog.setFont(new Font("SansSerif", Font.BOLD, 16));
+        lblTituloLog.setForeground(UIUtils.AMARILLO);
+        lblTituloLog.setBorder(new EmptyBorder(4, 0, 8, 0));
+        panelDerecha.add(lblTituloLog, BorderLayout.NORTH);
+
+        txtHistorialBatalla = new JTextArea();
         txtHistorialBatalla.setEditable(false);
-        txtHistorialBatalla.setFont(new Font("Monospaced", Font.BOLD, 13));
-        txtHistorialBatalla.setBackground(new Color(20, 24, 36));
-        txtHistorialBatalla.setForeground(new Color(240, 240, 240));
-        txtHistorialBatalla.setBorder(new EmptyBorder(8, 14, 8, 14));
-        JScrollPane scrollLog = new JScrollPane(txtHistorialBatalla);
-        scrollLog.setBorder(BorderFactory.createLineBorder(UIUtils.AZUL_MEDIO, 1));
-        panelInferior.add(scrollLog, BorderLayout.CENTER);
+        txtHistorialBatalla.setFont(new Font("Monospaced", Font.PLAIN, 13));
+        txtHistorialBatalla.setBackground(new Color(12, 15, 24));
+        txtHistorialBatalla.setForeground(new Color(230, 235, 245));
+        txtHistorialBatalla.setLineWrap(true);
+        txtHistorialBatalla.setWrapStyleWord(true);
+        txtHistorialBatalla.setMargin(new Insets(8, 8, 8, 8));
 
-        panelInferior.add(crearPanelMenu(), BorderLayout.SOUTH);
-        contenedor.add(panelInferior, BorderLayout.SOUTH);
+        JScrollPane scrollLog = new JScrollPane(txtHistorialBatalla);
+        scrollLog.setBorder(BorderFactory.createLineBorder(new Color(45, 55, 78), 1));
+        panelDerecha.add(scrollLog, BorderLayout.CENTER);
+
+        contenedor.add(panelDerecha, BorderLayout.EAST);
+
+        // 3. ABAJO: Menú con los 5 botones de acción
+        contenedor.add(crearPanelMenu(), BorderLayout.SOUTH);
 
         return contenedor;
     }
 
-
+    /**
+     * Posiciona los elementos en el campo según la resolución de pantalla
+     */
     private void recolocarComponentesResponsivo() {
         int w = panelFondoCampo.getWidth();
         int h = panelFondoCampo.getHeight();
 
         if (w <= 0 || h <= 0) return;
 
-        btnHuir.setBounds(25, 20, 110, 36);
+        // 1. Botón Huir
+        btnHuir.setBounds(20, 20, 100, 36);
 
-        int infoW = 340;
-        int infoH = 95;
+        // 2. Info Rival (Arriba a la izquierda)
+        int infoW = 330;
+        int infoH = 105;
         int infoRivalX = (int) (w * 0.04);
-        int infoRivalY = (int) (h * 0.10);
+        int infoRivalY = (int) (h * 0.08);
         panelInfoRival.setBounds(infoRivalX, infoRivalY, infoW, infoH);
 
+        // 3. Sprite Rival (Arriba a la derecha)
         int spriteRivalSize = Math.max(220, (int) (h * 0.42));
-        int spriteRivalX = (int) (w * 0.66) - (spriteRivalSize / 2);
+        int spriteRivalX = (int) (w * 0.65) - (spriteRivalSize / 2);
         int spriteRivalY = (int) (h * 0.28) - (spriteRivalSize / 2);
         lblSpriteRival.setBounds(spriteRivalX, spriteRivalY, spriteRivalSize, spriteRivalSize);
 
+        // 4. Sprite Jugador (Abajo a la izquierda)
         int spriteJugadorSize = Math.max(260, (int) (h * 0.52));
         int spriteJugadorX = (int) (w * 0.22) - (spriteJugadorSize / 2);
-        int spriteJugadorY = h - spriteJugadorSize - (int) (h * 0.05);
+        int spriteJugadorY = h - spriteJugadorSize - (int) (h * 0.04);
         lblSpriteJugador.setBounds(spriteJugadorX, spriteJugadorY, spriteJugadorSize, spriteJugadorSize);
 
-        int infoJugadorX = (int) (w * 0.62);
-        int infoJugadorY = h - infoH - (int) (h * 0.14);
+        // 5. Info Jugador (Abajo a la derecha)
+        int infoJugadorX = (int) (w * 0.58);
+        int infoJugadorY = h - infoH - (int) (h * 0.12);
         panelInfoJugador.setBounds(infoJugadorX, infoJugadorY, infoW, infoH);
 
         panelFondoCampo.revalidate();
@@ -196,14 +227,14 @@ public class PantallaCombate extends JPanel {
 
     private JPanel crearPanelInfo() {
         TarjetaRedondeada panel = new TarjetaRedondeada(UIUtils.AZUL_MEDIO, UIUtils.AMARILLO_OSCURO, 14);
-        panel.setLayout(new GridLayout(4, 1, 2, 2));
-        panel.setBorder(new EmptyBorder(8, 12, 8, 12));
+        panel.setLayout(new GridLayout(4, 1, 3, 3));
+        panel.setBorder(new EmptyBorder(10, 14, 10, 14));
         return panel;
     }
 
     private void configurarPanelInfo(JPanel panel, JLabel lblNombre, JLabel lblTipo, JLabel lblHpTexto, JProgressBar barra) {
         lblNombre.setForeground(Color.WHITE);
-        lblNombre.setFont(new Font("SansSerif", Font.BOLD, 16));
+        lblNombre.setFont(new Font("SansSerif", Font.BOLD, 15));
 
         lblTipo.setForeground(UIUtils.AMARILLO);
         lblTipo.setFont(new Font("SansSerif", Font.ITALIC, 12));
@@ -214,7 +245,7 @@ public class PantallaCombate extends JPanel {
         barra.setPreferredSize(new Dimension(100, 14));
         barra.setBorderPainted(false);
 
-        lblHpTexto.setForeground(new Color(210, 215, 225));
+        lblHpTexto.setForeground(new Color(220, 225, 235));
         lblHpTexto.setFont(new Font("SansSerif", Font.BOLD, 13));
 
         panel.add(lblNombre);
@@ -295,6 +326,7 @@ public class PantallaCombate extends JPanel {
             boolean cambio = combateActual.cambiarPokemon(elegido.getNombre());
             if (cambio) {
                 popularBatalla();
+                recolocarComponentesResponsivo();
                 verificarFinCombate();
             }
         }
@@ -451,7 +483,7 @@ public class PantallaCombate extends JPanel {
         int spriteSize = Math.max(240, (int) (panelFondoCampo.getHeight() * 0.45));
 
         if (pJugador != null) {
-            lblSpriteJugador.setIcon(cargarSprite(pJugador.getRutaImagen().replace(".png", "Back.png"), spriteSize + 30, spriteSize + 30));
+            lblSpriteJugador.setIcon(cargarSpriteJugador(pJugador.getRutaImagen(), spriteSize + 30, spriteSize + 30));
             lblNombreJugador.setText(pJugador.getNombre() + " (Nv. " + pJugador.getNivel() + ")");
             lblTipoJugador.setText("Tipo: " + pJugador.getTiposString());
             actualizarBarra(barraHpJugador, lblHpTextoJugador, pJugador);
@@ -478,6 +510,20 @@ public class PantallaCombate extends JPanel {
         else barra.setForeground(new Color(255, 59, 48));
 
         lblTexto.setText("HP: " + p.getHpActual() + " / " + p.getHpMax());
+    }
+
+    /**
+     * Carga el sprite de espalda y si no existe usa la imagen frontal de respaldo para evitar que desaparezca
+     */
+    private ImageIcon cargarSpriteJugador(String nombreArchivo, int ancho, int alto) {
+        String nombreBack = nombreArchivo.replace(".png", "Back.png");
+        URL urlBack = getClass().getResource("/Sprites/" + nombreBack);
+        if (urlBack != null) {
+            Image escalada = new ImageIcon(urlBack).getImage().getScaledInstance(ancho, alto, Image.SCALE_SMOOTH);
+            return new ImageIcon(escalada);
+        }
+        // Fallback: Si no tiene Back.png, carga el Sprite frontal normal
+        return cargarSprite(nombreArchivo, ancho, alto);
     }
 
     private ImageIcon cargarSprite(String nombreArchivo, int ancho, int alto) {
