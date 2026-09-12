@@ -8,6 +8,8 @@ package Pokemon;
  *
  * @author User
  */
-public class UsuariaExistenteException {
-    
+public class UsuariaExistenteException extends MenuException {
+    public UsuariaExistenteException(String mensaje) {
+        super(mensaje);
+    }
 }
