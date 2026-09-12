@@ -210,6 +210,10 @@ public class ListaEnlazadaPokemon {
         }
         return false;
     }
+    public void vaciar() {
+    this.head = null;
+    this.indice = 0;
+}
 
     public boolean tieneVivos() {
         return contarDisponibles() > 0;

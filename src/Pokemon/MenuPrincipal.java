@@ -23,13 +23,11 @@ public class MenuPrincipal extends JPanel {
         JButton btnCerrarSesion = UIUtils.crearBotonSecundario("Cerrar Sesión");
 
       
-        btnBatalla.setEnabled(false);
-        btnBatalla.setText("Batalla (Próximamente)");
-        btnBatalla.setPreferredSize(new Dimension(320, 54));
+btnBatalla.setPreferredSize(new Dimension(320, 54));
+btnBatalla.addActionListener(e -> mainApp.iniciarCombate());
 
-        btnEquipo.addActionListener(e -> mainApp.cambiarPantalla("ArmarEquipo"));
-        btnCerrarSesion.addActionListener(e -> mainApp.cambiarPantalla("Inicio"));
-
+btnEquipo.addActionListener(e -> mainApp.cambiarPantalla("ArmarEquipo"));
+btnCerrarSesion.addActionListener(e -> mainApp.cambiarPantalla("Inicio"));
         gbc.gridy = 0; fondo.add(titulo, gbc);
         gbc.insets = new Insets(0, 15, 40, 15);
         gbc.gridy = 1; fondo.add(barra, gbc);

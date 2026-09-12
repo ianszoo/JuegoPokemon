@@ -22,37 +22,31 @@ public class GestorUsuarios {
         inicializar10Rivales();
     }
 
-    // 1. CREAR UN USUARIO (Registro con 4 Pokémon)
-    public boolean crearUsuario(String username, String password) {
-        if (username == null || username.trim().isEmpty() || password == null || password.trim().isEmpty()) {
-            return false;
-        }
-        
-        if (buscarUsuario(username) != null) {
-            return false; 
-        }
-
-        Usuario nuevoUsuario = new Usuario(username.trim(), password);
-        // Equipo inicial de 4 Pokémon
-        nuevoUsuario.getEquipo().insertar(PokemonFactory.crearPokemon("Lucario", 20));
-        nuevoUsuario.getEquipo().insertar(PokemonFactory.crearPokemon("Greninja", 20));
-        nuevoUsuario.getEquipo().insertar(PokemonFactory.crearPokemon("Charizard", 20));
-        nuevoUsuario.getEquipo().insertar(PokemonFactory.crearPokemon("Garchomp", 20));
-
-        NodoUsuario nuevoNodo = new NodoUsuario(nuevoUsuario);
-        if (cabeza == null) {
-            cabeza = nuevoNodo;
-        } else {
-            NodoUsuario actual = cabeza;
-            while (actual.getSiguiente() != null) {
-                actual = actual.getSiguiente();
-            }
-            actual.setSiguiente(nuevoNodo);
-        }
-        return true;
+   public boolean crearUsuario(String username, String password) {
+    if (username == null || username.trim().isEmpty() || password == null || password.trim().isEmpty()) {
+        return false;
+    }
+    
+    if (buscarUsuario(username) != null) {
+        return false; 
     }
 
-    // 2. LOG IN (Autenticación)
+    Usuario nuevoUsuario = new Usuario(username.trim(), password);
+  
+
+    NodoUsuario nuevoNodo = new NodoUsuario(nuevoUsuario);
+    if (cabeza == null) {
+        cabeza = nuevoNodo;
+    } else {
+        NodoUsuario actual = cabeza;
+        while (actual.getSiguiente() != null) {
+            actual = actual.getSiguiente();
+        }
+        actual.setSiguiente(nuevoNodo);
+    }
+    return true;
+}
+
     public Usuario login(String username, String password) {
         NodoUsuario actual = cabeza;
         while (actual != null) {
@@ -76,7 +70,7 @@ public class GestorUsuarios {
         return null;
     }
 
-    // 3. LOS 10 RIVALES CON 4 POKÉMON CADA UNO
+ 
     private void inicializar10Rivales() {
         usuariosRivales = new Usuario[10];
 
@@ -85,7 +79,7 @@ public class GestorUsuarios {
             "Leon", "Ash", "Iris", "Alder", "Diantha"
         };
 
-        // Cada rival con exactamente 4 Pokémon de los 20 permitidos
+        
         String[][] equipos = {
             {"Charizard", "Snorlax", "Dragonite", "Blaziken"},      // Red
             {"Blaziken", "Tyranitar", "Excadrill", "Gengar"},        // Blue
@@ -108,7 +102,7 @@ public class GestorUsuarios {
         }
     }
 
-    // OBTENER UN RIVAL ALEATORIO CON 4 POKÉMON
+ 
     public Usuario obtenerRivalAleatorio() {
         int indice = random.nextInt(usuariosRivales.length);
         Usuario rivalOriginal = usuariosRivales[indice];

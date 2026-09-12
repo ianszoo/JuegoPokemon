@@ -10,6 +10,7 @@ package Pokemon;
  * @author David Suazo Palao
  */
 public class PokemonFactory {
+
     public static Pokemon crearPokemon(String nombre, int nivel) {
         switch (nombre.toLowerCase().trim()) {
             case "charizard":
@@ -37,13 +38,13 @@ public class PokemonFactory {
             case "milotic":
                 return new Pokemon("Milotic", nivel, Tipo.AGUA, Tipo.NINGUNO, 95, 60, 79, "Surf", Tipo.AGUA, 90, "milotic.png");
             case "raichu de alola":
-                return new Pokemon("Raichu de Alola", nivel, Tipo.ELECTRICO, Tipo.PSIQUICO, 60, 85, 50, "Rayo", Tipo.ELECTRICO, 90, "raichu_alola.png");
+                return new Pokemon("Raichu de Alola", nivel, Tipo.ELECTRICO, Tipo.PSIQUICO, 60, 85, 50, "Rayo", Tipo.ELECTRICO, 90, "raichuAlola.png");
             case "torterra":
                 return new Pokemon("Torterra", nivel, Tipo.PLANTA, Tipo.TIERRA, 95, 109, 105, "Terremoto", Tipo.TIERRA, 100, "torterra.png");
             case "weavile":
                 return new Pokemon("Weavile", nivel, Tipo.SINIESTRO, Tipo.HIELO, 70, 120, 65, "Chuzos", Tipo.HIELO, 85, "weavile.png");
             case "corviknight":
-                return new Pokemon("Corviknight", nivel, Tipo.ACERO, Tipo.VOLADOR, 98, 87, 105, "Pájaro Osado", Tipo.VOLADOR, 120, "corviknight.png");
+                return new Pokemon("Corviknight", nivel, Tipo.ACERO, Tipo.VOLADOR, 98, 87, 105, "Pájaro Osado", Tipo.VOLADOR, 120, "corviKnight.png");
             case "chandelure":
                 return new Pokemon("Chandelure", nivel, Tipo.FANTASMA, Tipo.FUEGO, 60, 55, 90, "Lanzallamas", Tipo.FUEGO, 90, "chandelure.png");
             case "excadrill":
@@ -64,4 +65,3 @@ public class PokemonFactory {
         "Corviknight", "Chandelure", "Excadrill", "Florges", "Hydreigon"
     };
 }
-

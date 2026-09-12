@@ -22,31 +22,24 @@ public class ListaEnlazadaUsuarios {
         inicializar10Rivales();
     }
 
-    public void registrarUsuario(Usuario nuevoUsuario) throws UsuariaExistenteException {
-        if (buscarUsuario(nuevoUsuario.getUsername()) != null) {
-            throw new UsuariaExistenteException("Error: El nombre de usuario ya está registrado.");
-        }
-
-        // Si el usuario no tiene Pokémon, le asignamos su equipo inicial de 4
-        if (nuevoUsuario.getEquipo().estaVacia()) {
-            nuevoUsuario.getEquipo().add(PokemonFactory.crearPokemon("Lucario", 20));
-            nuevoUsuario.getEquipo().add(PokemonFactory.crearPokemon("Greninja", 20));
-            nuevoUsuario.getEquipo().add(PokemonFactory.crearPokemon("Charizard", 20));
-            nuevoUsuario.getEquipo().add(PokemonFactory.crearPokemon("Garchomp", 20));
-        }
-
-        NodoUsuario nuevoNodo = new NodoUsuario(nuevoUsuario);
-        if (cabeza == null) {
-            cabeza = nuevoNodo;
-        } else {
-            NodoUsuario actual = cabeza;
-            while (actual.getSiguiente() != null) {
-                actual = actual.getSiguiente();
-            }
-            actual.setSiguiente(nuevoNodo);
-        }
+   public void registrarUsuario(Usuario nuevoUsuario) throws UsuariaExistenteException {
+    if (buscarUsuario(nuevoUsuario.getUsername()) != null) {
+        throw new UsuariaExistenteException("Error: El nombre de usuario ya está registrado.");
     }
 
+
+
+    NodoUsuario nuevoNodo = new NodoUsuario(nuevoUsuario);
+    if (cabeza == null) {
+        cabeza = nuevoNodo;
+    } else {
+        NodoUsuario actual = cabeza;
+        while (actual.getSiguiente() != null) {
+            actual = actual.getSiguiente();
+        }
+        actual.setSiguiente(nuevoNodo);
+    }
+}
     public Usuario buscarUsuario(String username) {
         if (username == null) return null;
         NodoUsuario actual = cabeza;
