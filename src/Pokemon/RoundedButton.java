@@ -24,14 +24,14 @@ public class RoundedButton extends JButton {
         this.colorHover = colorHover;
         this.colorPresionado = colorPresionado;
 
-        setFont(new Font("SansSerif", Font.BOLD, 20));
+        setFont(new Font("SansSerif", Font.BOLD, 16));
         setForeground(Color.WHITE);
         setFocusPainted(false);
         setContentAreaFilled(false);
         setBorderPainted(false);
         setOpaque(false);
         setCursor(new Cursor(Cursor.HAND_CURSOR));
-        setPreferredSize(new Dimension(270, 54));
+        setPreferredSize(new Dimension(220, 48));
 
         addMouseListener(new MouseAdapter() {
             @Override
@@ -61,15 +61,6 @@ public class RoundedButton extends JButton {
         });
     }
 
-  
-    @Override
-    public void setBackground(Color bg) {
-        this.colorNormal = bg;
-        this.colorHover = bg;
-        this.colorPresionado = bg;
-        repaint();
-    }
-
     @Override
     protected void paintComponent(Graphics g) {
         Graphics2D g2 = (Graphics2D) g.create();
@@ -77,7 +68,7 @@ public class RoundedButton extends JButton {
 
         Color base;
         if (!isEnabled()) {
-            base = new Color(120, 120, 120);
+            base = new Color(100, 100, 100);
         } else if (presionado) {
             base = colorPresionado;
         } else if (hover) {
@@ -89,20 +80,29 @@ public class RoundedButton extends JButton {
         int w = getWidth();
         int h = getHeight();
 
-       
-        g2.setColor(new Color(0, 0, 0, 80));
-        g2.fill(new RoundRectangle2D.Double(2, 5, w - 6, h - 6, radio, radio));
+        // Sombra suave
+        g2.setColor(new Color(0, 0, 0, 70));
+        g2.fill(new RoundRectangle2D.Double(2, 4, w - 4, h - 4, radio, radio));
 
-
+        // Fondo degradado
         GradientPaint gp = new GradientPaint(0, 0, base.brighter(), 0, h, base.darker());
         g2.setPaint(gp);
-        g2.fill(new RoundRectangle2D.Double(0, 0, w - 6, h - 8, radio, radio));
+        g2.fill(new RoundRectangle2D.Double(0, 0, w - 4, h - 4, radio, radio));
 
-        g2.setStroke(new BasicStroke(2.5f));
-        g2.setColor(new Color(255, 255, 255, isEnabled() ? 230 : 120));
-        g2.draw(new RoundRectangle2D.Double(1.25, 1.25, w - 8.5, h - 10.5, radio, radio));
+        // Borde
+        g2.setStroke(new BasicStroke(2.0f));
+        g2.setColor(new Color(255, 255, 255, isEnabled() ? 200 : 80));
+        g2.draw(new RoundRectangle2D.Double(1, 1, w - 6, h - 6, radio, radio));
+
+        // Texto centrado
+        FontMetrics fm = g2.getFontMetrics(getFont());
+        int x = (w - 4 - fm.stringWidth(getText())) / 2;
+        int y = (h - 4 - fm.getHeight()) / 2 + fm.getAscent();
+
+        g2.setColor(getForeground());
+        g2.setFont(getFont());
+        g2.drawString(getText(), x, y);
 
         g2.dispose();
-        super.paintComponent(g);
     }
 }
