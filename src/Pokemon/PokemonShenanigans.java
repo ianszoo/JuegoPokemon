@@ -2,11 +2,12 @@ package Pokemon;
 
 import javax.swing.*;
 import java.awt.*;
+import java.net.URL;
 
 public class PokemonShenanigans extends JFrame {
     private CardLayout cardLayout;
     private JPanel mainContainer;
-    private ListaUsuarios baseDatosUsuarios;
+    private ListaEnlazadaUsuarios baseDatosUsuarios;
     private Usuario usuarioLogueado;
 
     public PokemonShenanigans() {
@@ -15,7 +16,13 @@ public class PokemonShenanigans extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        baseDatosUsuarios = new ListaUsuarios();
+     
+        URL iconoURL = getClass().getResource("/imagenes/Logo.png");
+        if (iconoURL != null) {
+            setIconImage(new ImageIcon(iconoURL).getImage());
+        }
+
+        baseDatosUsuarios = new ListaEnlazadaUsuarios();
         cardLayout = new CardLayout();
         mainContainer = new JPanel(cardLayout);
 
@@ -35,7 +42,7 @@ public class PokemonShenanigans extends JFrame {
         cardLayout.show(mainContainer, nombrePantalla);
     }
 
-    public ListaUsuarios getBaseDatosUsuarios() {
+    public ListaEnlazadaUsuarios getBaseDatosUsuarios() {
         return baseDatosUsuarios;
     }
 

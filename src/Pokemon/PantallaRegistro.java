@@ -3,75 +3,93 @@ package Pokemon;
 import javax.swing.*;
 import java.awt.*;
 
+
 public class PantallaRegistro extends JPanel {
+
+    private static final int LONGITUD_MINIMA = 5;
+
     public PantallaRegistro(PokemonShenanigans mainApp) {
-        setLayout(new GridBagLayout());
-        setBackground(UIUtils.BG_OSCURO);
+        setLayout(new BorderLayout());
+
+        FondoDegradado fondo = new FondoDegradado(UIUtils.AZUL_OSCURO, new Color(12, 15, 24));
+        fondo.setLayout(new GridBagLayout());
+        add(fondo, BorderLayout.CENTER);
+
+        TarjetaRedondeada tarjeta = new TarjetaRedondeada(UIUtils.AZUL_MEDIO, UIUtils.AMARILLO, 28);
+        tarjeta.setLayout(new GridBagLayout());
+        tarjeta.setPreferredSize(new Dimension(500, 680));
+        fondo.add(tarjeta, new GridBagConstraints());
+
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
         gbc.gridx = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(6, 40, 6, 40);
 
-        JLabel titulo = new JLabel("CREAR USUARIO");
-        titulo.setFont(new Font("SansSerif", Font.BOLD, 40));
-        titulo.setForeground(UIUtils.PKMN_AMARILLO);
+        JLabel titulo = UIUtils.crearTitulo("CREAR ENTRENADOR", 30);
+        JLabel subtitulo = UIUtils.crearSubtitulo("Regístrate y comienza tu aventura");
 
-        JTextField txtUsuario = new JTextField(15);
-        txtUsuario.setFont(new Font("SansSerif", Font.PLAIN, 24));
-        txtUsuario.setHorizontalAlignment(JTextField.CENTER);
-        
-        JPasswordField txtPass = new JPasswordField(15);
-        txtPass.setFont(new Font("SansSerif", Font.PLAIN, 24));
-        txtPass.setHorizontalAlignment(JPasswordField.CENTER);
+        JLabel lblUsuario = UIUtils.crearEtiqueta("USUARIO ÚNICO");
+        JTextField txtUsuario = UIUtils.crearCampoTexto(15);
 
-        JLabel lblUsuario = new JLabel("Usuario Único:");
-        lblUsuario.setForeground(UIUtils.TEXTO_CLARO);
-        JLabel lblPass = new JLabel("Contraseña (5 chars, 1 mayúscula, 1 número):");
-        lblPass.setForeground(UIUtils.TEXTO_CLARO);
+        JLabel lblPass = UIUtils.crearEtiqueta("CONTRASEÑA");
+        CampoPassword campoPass = new CampoPassword(15);
+        JLabel ayudaPass = UIUtils.crearEtiquetaAyuda(
+                "Mínimo " + LONGITUD_MINIMA + " caracteres, con al menos 1 mayúscula y 1 número");
 
-        // Etiqueta para errores (Sin Pop-ups)
-        JLabel lblError = new JLabel(" ");
-        lblError.setForeground(UIUtils.ERROR_COLOR);
-        lblError.setFont(new Font("SansSerif", Font.BOLD, 14));
+        JLabel lblConfirmar = UIUtils.crearEtiqueta("CONFIRMAR CONTRASEÑA");
+        CampoPassword campoConfirmar = new CampoPassword(15);
 
-        JButton btnRegistrar = UIUtils.crearBotonEstilizado("Registrar y Entrar");
-        JButton btnVolver = UIUtils.crearBotonEstilizado("Volver");
+        JLabel lblError = UIUtils.crearEtiquetaError();
+
+        JButton btnRegistrar = UIUtils.crearBotonExito("Registrar y Entrar");
+        JButton btnVolver = UIUtils.crearBotonSecundario("Volver");
 
         btnVolver.addActionListener(e -> {
             lblError.setText(" ");
+            txtUsuario.setText("");
+            campoPass.limpiar();
+            campoConfirmar.limpiar();
             mainApp.cambiarPantalla("Inicio");
         });
 
         btnRegistrar.addActionListener(e -> {
             try {
-                String user = txtUsuario.getText();
-                String pass = new String(txtPass.getPassword());
+                String user = txtUsuario.getText().trim();
+                String pass = campoPass.getPassword();
+                String confirmacion = campoConfirmar.getPassword();
 
-                if (user.isEmpty() || pass.isEmpty()) {
+                if (user.isEmpty() || pass.isEmpty() || confirmacion.isEmpty()) {
                     throw new CampoVacioException("Error: Ningún campo puede estar vacío.");
                 }
-                
-                if (pass.length() != 5) {
-                    throw new PasswordInvalidaException("Error: La contraseña debe tener exactamente 5 caracteres.");
+
+                if (pass.length() < LONGITUD_MINIMA) {
+                    throw new PasswordInvalidaException(
+                            "Error: La contraseña debe tener mínimo " + LONGITUD_MINIMA + " caracteres.");
                 }
-                
+
                 boolean tieneMayuscula = false;
                 boolean tieneNumero = false;
                 for (char c : pass.toCharArray()) {
                     if (Character.isUpperCase(c)) tieneMayuscula = true;
                     if (Character.isDigit(c)) tieneNumero = true;
                 }
-                
+
                 if (!tieneMayuscula || !tieneNumero) {
                     throw new PasswordInvalidaException("Error: La contraseña necesita 1 mayúscula y 1 número.");
                 }
 
+                if (!pass.equals(confirmacion)) {
+                    throw new PasswordInvalidaException("Error: Las contraseñas no coinciden.");
+                }
+
                 Usuario nuevoUser = new Usuario(user, pass);
                 mainApp.getBaseDatosUsuarios().registrarUsuario(nuevoUser);
-                
+
                 // Auto Login
                 lblError.setText(" ");
                 txtUsuario.setText("");
-                txtPass.setText("");
+                campoPass.limpiar();
+                campoConfirmar.limpiar();
                 mainApp.loginExitoso(nuevoUser);
 
             } catch (MenuException ex) {
@@ -79,13 +97,38 @@ public class PantallaRegistro extends JPanel {
             }
         });
 
-        gbc.gridy = 0; add(titulo, gbc);
-        gbc.gridy = 1; add(lblUsuario, gbc);
-        gbc.gridy = 2; add(txtUsuario, gbc);
-        gbc.gridy = 3; add(lblPass, gbc);
-        gbc.gridy = 4; add(txtPass, gbc);
-        gbc.gridy = 5; add(lblError, gbc);
-        gbc.gridy = 6; add(btnRegistrar, gbc);
-        gbc.gridy = 7; add(btnVolver, gbc);
+        JPanel panelBotones = new JPanel(new GridLayout(2, 1, 0, 12));
+        panelBotones.setOpaque(false);
+        panelBotones.add(btnRegistrar);
+        panelBotones.add(btnVolver);
+
+        int fila = 0;
+        gbc.insets = new Insets(18, 40, 2, 40);
+        gbc.gridy = fila++; tarjeta.add(titulo, gbc);
+        gbc.insets = new Insets(2, 40, 18, 40);
+        gbc.gridy = fila++; tarjeta.add(subtitulo, gbc);
+
+        gbc.insets = new Insets(6, 40, 2, 40);
+        gbc.gridy = fila++; tarjeta.add(lblUsuario, gbc);
+        gbc.insets = new Insets(0, 40, 12, 40);
+        gbc.gridy = fila++; tarjeta.add(txtUsuario, gbc);
+
+        gbc.insets = new Insets(6, 40, 2, 40);
+        gbc.gridy = fila++; tarjeta.add(lblPass, gbc);
+        gbc.insets = new Insets(0, 40, 2, 40);
+        gbc.gridy = fila++; tarjeta.add(campoPass, gbc);
+        gbc.insets = new Insets(0, 40, 12, 40);
+        gbc.gridy = fila++; tarjeta.add(ayudaPass, gbc);
+
+        gbc.insets = new Insets(6, 40, 2, 40);
+        gbc.gridy = fila++; tarjeta.add(lblConfirmar, gbc);
+        gbc.insets = new Insets(0, 40, 14, 40);
+        gbc.gridy = fila++; tarjeta.add(campoConfirmar, gbc);
+
+        gbc.insets = new Insets(0, 40, 10, 40);
+        gbc.gridy = fila++; tarjeta.add(lblError, gbc);
+
+        gbc.insets = new Insets(10, 40, 25, 40);
+        gbc.gridy = fila++; tarjeta.add(panelBotones, gbc);
     }
 }
